@@ -1,0 +1,89 @@
+{% extends 'layout.html' %}
+{% block body %}
+
+<style>
+    .small-row td {
+        padding: 0.25rem 0.5rem;
+        vertical-align: middle;
+    }
+</style>
+
+<div class="container mt-5" style="min-width: 1600px !important">
+    <div class="d-flex mb-3 mt-5 pt-5">
+        <form class="form d-flex me-auto" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="search_form" value="1">
+            <!-- Search Input -->
+            <input type="text" class="form-control" style="height: 40px; width: 500px;" name="employeeSearch" placeholder="Search employees...">
+    
+            <!-- Search Button -->
+            <button type="submit" class="btn btn-dark ms-2">Search</button>
+    
+            <!-- Department Dropdown -->
+            <select name="department" class="btn btn-outline-dark ms-2" style="height: 40px;">
+                <option class="bg-light text-dark" value="">All Departments</option>
+                {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if request.GET.department == dept.id|stringformat:"s" %}selected{% endif %} class="bg-light text-dark">
+                        {{ dept.name }}
+                    </option>
+                {% endfor %}
+            </select>
+    
+            <!-- Designation Dropdown -->
+            <select name="designation" class="btn btn-outline-dark ms-2" style="height: 40px;">
+                <option class="bg-light text-dark" value="">All Designations</option>
+                {% for desig in designations %}
+                    <option value="{{ desig.id }}" {% if request.GET.designation == desig.id|stringformat:"s" %}selected{% endif %} class="bg-light text-dark">
+                        {{ desig.title }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+        <button class="btn btn-dark ms-auto" data-bs-toggle="modal" data-bs-target="#addEmployeeModal"><i class="fa-solid fa-plus me-3"></i>Apply</button>
+    </div>
+    <div class="row">
+        <div class="col-md-12 table-responsive" style="max-height: 600px; overflow-y: auto;">
+            <table class="table table-striped table-hover">
+                <thead class="table-light position-sticky top-0">
+                    <tr>
+                        <th>ID</th>
+                        <th>Employee Name</th>
+                        <th>Designation</th>
+                        <th>Department</th>
+                        <th>Casual Leave ({{globalConfig.casualLeave}})</th>
+                        <th>Medical Leave ({{globalConfig.medicallLeave}})</th>
+                        <th>Annual Leave ({{globalConfig.annualLeave}})</th>
+                        <th>Other Leave ({{globalConfig.otherLeave}})</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in employees %}
+                    <tr class="small-row">
+                        <form action="/leave/updateLeaveAdjustment/{{employee.user.id}}" method="post">
+                            {% csrf_token %}
+                            <td>{{ employee.user.id }}</td>
+                            <td>{{ employee.user.get_full_name }}</td>
+                            <td>{{ employee.designation.title }}</td>
+                            <td>{{ employee.department.name }}</td>
+                            <td class="d-flex"><input type="text" value="{{employee.casualLeave}}" name="casualLeave" class="form-control form-control-sm" style="width: 45px;"></td>
+                            <td><input type="text" value="{{employee.medicalLeave}}" name="medicalLeave" class="form-control form-control-sm" style="width: 45px;"></td>
+                            <td><input type="text" value="{{employee.annualLeave}}" name="annualLeave" class="form-control form-control-sm" style="width: 45px;"></td>
+                            <td><input type="text" value="{{employee.otherLeave}}" name="otherLeave" class="form-control form-control-sm" style="width: 45px;"></td>
+                            <td><button class="btn btn-sm btn-success" type="submit"><i class="fa-solid fa-check"></i></button></td>
+                        </form>
+                    </tr>
+                    
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="text-center">No leave applications found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

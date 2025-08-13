@@ -1,0 +1,31 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.employee_list, name='employee_list'),
+    path('login', views.login_, name='login'),
+    path('logout', views.logout_, name='logout'),
+    path('departments', views.departments, name='departments'),
+    path('addEmployee', views.addEmployee, name='addEmployee'),
+    path('indivEmployee/<str:employeeID>', views.indivEmployee, name='indivEmployee'),
+    path('editEmployee/<str:employeeID>', views.editEmployee, name='editEmployee'),
+    path('searchEmployee', views.getEmployee, name='getEmployee'),
+    path('benefits/viewAwards', views.viewAwards, name='viewAwards'),
+    path('benefits/addAwards', views.addAwards, name='addAwards'),
+    path('benefits/healthInsurance', views.viewHealthInsurance, name='viewHealthInsurance'),
+    path('benefits/addHealthInsurance', views.addHealthInsurance, name='addHealthInsurance'),
+    path('benefits/viewCars', views.viewCar, name='viewCar'),
+    path('benefits/addCar', views.addCar, name='addCar'),
+    path('benefits/addCarAmenity', views.addCarAmenity, name='addCarAmenity'),
+    path('benefits/viewMobile', views.viewMobile, name='viewMobile'),
+    path('benefits/addMobile', views.addMobile, name='addMobile'),
+    path('benefits/viewAccomodation', views.viewAccomodation, name='viewAccomodation'),
+    path('benefits/addAccomodation', views.addAccomodation, name='addAccomodation'),
+    path('benefits/viewTravelAllowance', views.viewTravelAllowance, name='viewTravelAllowance'),
+    path('benefits/addTravelAllowance', views.addTravelAllowance, name='addTravelAllowance'),
+    path('benefits/viewFoodAndMeals', views.viewFoodAndMeals, name='viewFoodAndMeals'),
+    path('benefits/addLunchEnrollment', views.add_lunch_enrollment, name='add_lunch_enrollment'),
+    path('reimbursementRequests', views.reimbursement_requests, name='reimbursement_requests'),
+    path('approveReimbursement/<str:reimbursementID>', views.approveReimbursement, name='approveReimbursement'),
+    path('declineReimbursement/<str:reimbursementID>', views.declineReimbursement, name='declineReimbursement'),
+]

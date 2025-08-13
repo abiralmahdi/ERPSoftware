@@ -1,0 +1,142 @@
+{% extends 'layout.html' %}
+{% block body %}
+<style>
+    /* Ensure thead stays visible when scrolling */
+    .sticky-header th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background-color: #f8f9fa; /* matches Bootstrap table header color */
+    }
+</style>
+
+
+<!-- Modal -->
+<div class="modal fade" id="addAwardModal" tabindex="-1" aria-labelledby="addAwardModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <form method="POST" action="/employees/benefits/addAwards">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="addAwardModalLabel">Add Award</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+        
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Employee Dropdown -->
+                    <div class="col-md-6 mb-3">
+                        <label>Employee</label>
+                        <select name="employee" class="form-control" required>
+                            <option value="">Select Employee</option>
+                            {% for emp in employees %}
+                                <option value="{{ emp.id }}">{{ emp.user.first_name }} {{ emp.user.last_name }} - {{emp.designation.title}}, {{emp.department.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+        
+                    <!-- Title -->
+                    <div class="col-md-6 mb-3">
+                        <label>Award Title</label>
+                        <input type="text" name="title" class="form-control" required>
+                    </div>
+        
+                    <!-- Date Awarded -->
+                    <div class="col-md-6 mb-3">
+                        <label>Date Awarded</label>
+                        <input type="date" name="date_awarded" class="form-control" required>
+                    </div>
+        
+                    <!-- Amount -->
+                    <div class="col-md-6 mb-3">
+                        <label>Award Amount</label>
+                        <input type="number" name="amount" step="0.01" class="form-control" required>
+                    </div>
+        
+                    <!-- Description -->
+                    <div class="col-md-12 mb-3">
+                        <label>Description (optional)</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-dark">Save Award</button>
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+<div class="d-flex" style="margin-top: 80px;">
+<div class="bg-light text-dark p-3" style="min-width: 250px; min-height: 100vh;">
+        <h5 class="text-center mb-4">Employee Benefits</h5>
+        <ul class="nav flex-column">
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewAwards' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewAwards">🏆 Awards and Incentives</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'healthInsurance' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/healthInsurance">💊 Health Insurance</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewCars' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewCars">🚗 Car</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewMobile' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewMobile">📱 Mobile</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewAccomodation' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewAccomodation">🏠 Accommodation</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewTravelAllowance' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewTravelAllowance">✈️ Travel Allowance</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewFoodAndMeals' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewFoodAndMeals">🍱 Food and Meals</a>
+          </li>
+          
+        </ul>
+      </div>
+    <div style="width: 1200px;">
+        <div class="d-flex mb-3">
+            <form class="form d-flex me-auto" action="" method="get">
+                <!-- Search Input -->
+                <input type="text" class="form-control" style="height: 40px; width: 500px;" name="employeeSearch" placeholder="Search employees...">
+        
+                <!-- Search Button -->
+                <button type="submit" class="btn btn-dark ms-2">Search</button>
+            </form>
+            <button class="btn btn-dark ms-auto" data-bs-toggle="modal" data-bs-target="#addAwardModal"><i class="fa-solid fa-plus me-3"></i>Add Award</button>
+        </div>
+        
+
+        <div class="table-container" style="max-height: 650px; overflow-y: auto; position: relative;">
+            <table class="table table-striped">
+                <thead class="sticky-header">
+                    <tr>
+                        <th>Employee Name</th>
+                        <th>Award</th>
+                        <th>Award Date</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for award in awards %}
+                    <tr>
+                        <td>{{ award.employee.user.first_name }} {{ award.employee.user.last_name }}</td>
+                        <td>{{ award.title }}</td>
+                        <td>{{ award.date_awarded }}</td>
+                        <td>{{ award.description }}</td>
+                        <td>{{ award.amount }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

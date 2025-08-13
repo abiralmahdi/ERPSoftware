@@ -1,0 +1,113 @@
+{% extends 'layout.html' %}
+{% block body %}
+<style>
+    /* Ensure thead stays visible when scrolling */
+    .sticky-header th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background-color: #f8f9fa; /* matches Bootstrap table header color */
+    }
+</style>
+
+
+<!-- Modal -->
+<div class="modal fade" id="addAwardModal" tabindex="-1" aria-labelledby="addAwardModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <form method="POST" action="/employees/benefits/addTravelAllowance">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="addAwardModalLabel">Add Travel Allowance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+        
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Employee Dropdown -->
+                    <div class="col-md-6 mb-3">
+                        <label>Employee</label>
+                        <select name="employee" class="form-control" required>
+                            <option value="">Select Employee</option>
+                            {% for emp in employees %}
+                                <option value="{{ emp.id }}">{{ emp.user.first_name }} {{ emp.user.last_name }} - {{emp.designation.title}}, {{emp.department.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Date End -->
+                    <div class="col-md-6 mb-3">
+                        <label>Amount</label>
+                        <input type="text" name="amount" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-dark">Save Travel Allowance</button>
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+<div class="d-flex" style="margin-top: 80px;">
+    <div class="bg-light text-dark p-3" style="min-width: 250px; min-height: 100vh;">
+        <h5 class="text-center mb-4">Employee Benefits</h5>
+        <ul class="nav flex-column">
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewAwards' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewAwards">🏆 Awards and Incentives</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'healthInsurance' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/healthInsurance">💊 Health Insurance</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewCars' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewCars">🚗 Car</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewMobile' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewMobile">📱 Mobile</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewAccomodation' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewAccomodation">🏠 Accommodation</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewTravelAllowance' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewTravelAllowance">✈️ Travel Allowance</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewFoodAndMeals' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewFoodAndMeals">🍱 Food and Meals</a>
+          </li>
+          
+        </ul>
+      </div>
+    <div style="width: 1200px;">
+        <div class="d-flex mb-3">
+            <button class="btn btn-dark ms-auto" data-bs-toggle="modal" data-bs-target="#addAwardModal"><i class="fa-solid fa-plus me-3"></i>Add Accomodation</button>
+        </div>
+        
+
+        <div class="table-container" style="max-height: 650px; overflow-y: auto; position: relative;">
+            <table class="table table-striped">
+                <thead class="sticky-header">
+                    <tr>
+                        <th>Employee Name</th>
+                        <th>Amount</th>
+                        <th>Allocation Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for allowance in allowances %}
+                    <tr>
+                        <td>{{ allowance.employee.user.first_name }} {{ allowance.employee.user.last_name }}</td>
+                        <td>{{ allowance.amount }}</td>
+                        <td>{{ allowance.allocationDate }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends 'layout.html' %}
+{% block body %}
+<style>
+    .sticky-header th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background-color: #f8f9fa;
+    }
+
+    .table-container {
+        max-height: 400px;
+        overflow-y: auto;
+        position: relative;
+        width: 48%;
+    }
+
+    .table-wrapper {
+        display: flex;
+        justify-content: space-between;
+        gap: 2%;
+        flex-wrap: wrap;
+    }
+
+    .add-btn-container {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    .add-btn-container>div {
+        width: 48%;
+        display: flex;
+        justify-content: flex-end;
+    }
+</style>
+
+<!-- Department Modal -->
+<div class="modal fade" id="addDepartmentModal" tabindex="-1" aria-labelledby="addDepartmentModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" enctype="multipart/form-data" action="/employees/departments">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Department</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label>Department Name</label>
+                    <input type="text" name="deptName" class="form-control" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-dark">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Designation Modal -->
+<div class="modal fade" id="addDesignationModal" tabindex="-1" aria-labelledby="addDesignationModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" enctype="multipart/form-data" action="/employees/departments">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Designation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label>Designation Title</label>
+                    <input type="text" name="title" class="form-control" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-dark">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="container" style="margin-top: 130px;">
+    <div class="add-btn-container">
+        <div>
+            <h3 class="h4 me-auto fw-bold">Department</h3>
+            <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDepartmentModal">
+                <i class="fa-solid fa-plus me-2"></i>Add Department
+            </button>
+        </div>
+        <div>
+            <h3 class="h4 me-auto fw-bold">Designation</h3>
+            <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDesignationModal">
+                <i class="fa-solid fa-plus me-2"></i>Add Designation
+            </button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <!-- Department Table -->
+        <div class="table-container">
+            <table class="table table-striped">
+                <thead class="sticky-header">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Employees</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for department in departments %}
+                    <tr>
+                        <td>{{ department.id }}</td>
+                        <td>{{ department.name }}</td>
+                        <td>{{ department.employees.all.count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Designation Table -->
+        <div class="table-container">
+            <table class="table table-striped">
+                <thead class="sticky-header">
+                    <tr>
+                        <th>#</th>
+                        <th>Title</th>
+                        <th>Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for designation in designations %}
+                    <tr>
+                        <td>{{ designation.id }}</td>
+                        <td>{{ designation.title }}</td>
+                        <td>{{ designation.level }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

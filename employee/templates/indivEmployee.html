@@ -1,0 +1,393 @@
+{% extends 'layout.html' %}
+{% load custom_filters %}
+{% load static %}
+
+{% block body %}
+
+
+<div class="container bg-white p-4 shadow rounded" style="margin-top: 60px;">
+    <form action="/employees/editEmployee/{{employee.id}}" method="post" enctype="multipart/form-data" class="row">
+        {% csrf_token %}
+        <!-- Photo -->
+        <div class="col-md-3 text-center">
+            {% if employee.profile_picture %}
+            <img src="{{employee.profile_picture.url }}" class="img-thumbnail" style="max-width: 250px;">
+            {% else %}
+            <img src="" alt="No Photo Found">
+            {% endif %}
+            <input type="file" class="form-control" name="profile_picture">
+
+            <button class="btn btn-dark mt-3" type="submit">Save Changes</button>
+        </div>
+
+        <!-- Details -->
+        <div class="col-md-3">
+            <h3>{{ employee.user.get_full_name }}</h3>
+        
+            <div class="mb-2 row align-items-center">
+                <label class="col-sm-2 col-form-label"><strong>Designation:</strong></label>
+                <div class="col-sm-8 ms-5">
+                    <select class="form-select" name="designation">
+                        {% for designation in designations %}
+                            <option value="{{ designation.id }}"
+                                {% if designation.id == employee.designation.id %}selected{% endif %}>
+                                {{ designation.title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-2 row align-items-center">
+                <label class="col-sm-2 col-form-label"><strong>Department:</strong></label>
+                <div class="col-sm-8 ms-5">
+                    <select class="form-select" name="department">
+                        {% for department in departments %}
+                            <option value="{{ department.id }}"
+                                {% if department.id == employee.department.id %}selected{% endif %}>
+                                {{ department.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+        
+            <div class="mb-2 row align-items-center">
+                <label class="col-sm-2 col-form-label"><strong>Phone:</strong></label>
+                <div class="col-sm-8 ms-5">
+                    <input type="text" class="form-control" value="{{ employee.phone }}" name="phone">
+                </div>
+            </div>
+        
+            <div class="mb-2 row align-items-center">
+                <label class="col-sm-2 col-form-label"><strong>Email:</strong></label>
+                <div class="col-sm-8 ms-5">
+                    <input type="text" class="form-control" value="{{ employee.user.email }}" name="email">
+                </div>
+            </div>
+
+            <div class="mb-2 row align-items-center">
+                <label class="col-sm-2 col-form-label"><strong>Password:</strong></label>
+                <div class="col-sm-8 ms-5 position-relative">
+                    <input type="password" class="form-control" id="passwordInput" value="{{ employee.password }}" name="password">
+                    <button type="button" class="border-light btn bg-white position-absolute top-50 end-0 translate-middle-y me-2" onclick="togglePassword()">
+                        👁️
+                    </button>
+                </div>
+            </div>
+            
+            <script>
+            function togglePassword() {
+                const input = document.getElementById('passwordInput');
+                if (input.type === "password") {
+                    input.type = "text";
+                } else {
+                    input.type = "password";
+                }
+            }
+            </script>
+        
+            <div class="mb-2 row align-items-center">
+                <label class="col-sm-2 col-form-label"><strong>Joined:</strong></label>
+                <div class="col-sm-8 ms-5">
+                    <input type="text" class="form-control" value="{{ employee.join_date }}" readonly>
+                </div>
+            </div>
+        
+            <div class="mb-2 row align-items-center">
+                <label class="col-sm-2 col-form-label"><strong>Salary:</strong></label>
+                <div class="col-sm-8 ms-5">
+                    <input type="text" class="form-control" value="{{ employee.salary }}" name="salary">
+                </div>
+            </div>
+        
+            <div class="mb-2 row align-items-center">
+                <label class="col-sm-2 col-form-label"><strong>Status:</strong></label>
+                <div class="col-sm-8 ms-5">
+                    <select name="status" class="form-control">
+                        <option value="Active" {% if employee.status == "Active" %}selected{% endif %}>Active</option>
+                        <option value="Leave" {% if employee.status == "Leave" %}selected{% endif %}>Leave</option>
+                        <option value="Inactive" {% if employee.status == "Inactive" %}selected{% endif %}>Inactive</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <!-- First Row -->
+            <div class="row">
+                <div class="col-md-4 d-flex">
+                    <div class="card text-bg-warning mb-3 m-2 flex-fill" style="height: 10rem;">
+                        <div class="card-header">Leave Days</div>
+                        <div class="card-body">
+                            <h1 class="card-title text-center">12</h1>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex">
+                    <div class="card text-bg-secondary mb-3 m-2 flex-fill" style="height: 10rem;">
+                        <div class="card-header">Visits</div>
+                        <div class="card-body">
+                            <h1 class="card-title text-center">14</h1>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex">
+                    <div class="card text-bg-danger mb-3 m-2 flex-fill" style="height: 10rem;">
+                        <div class="card-header">Absent Days</div>
+                        <div class="card-body">
+                            <h1 class="card-title text-center">6</h1>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Second Row -->
+            <div class="row">
+                <div class="col-md-4 d-flex">
+                    <div class="card text-bg-info mb-3 m-2 flex-fill" style="height: 10rem;">
+                        <div class="card-header">Tasks</div>
+                        <div class="card-body">
+                            <h1 class="card-title text-center">3</h1>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex">
+                    <div class="card text-bg-dark mb-3 m-2 flex-fill" style="height: 10rem;">
+                        <div class="card-header">Disciplinary Records</div>
+                        <div class="card-body">
+                            <h1 class="card-title text-center">0 </h1>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex">
+                    <div class="card text-bg-success mb-3 m-2 flex-fill" style="height: 10rem;">
+                        <div class="card-header">Efficiency Score</div>
+                        <div class="card-body">
+                            <h1 class="card-title text-center">93%</h1>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </form>
+
+<!-- Tables -->
+    <style>
+        .fixed-table-container {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .fixed-header thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa; /* Light grey, same as Bootstrap */
+            z-index: 1;
+        }
+        
+        .table th, .table td {
+            white-space: nowrap;
+        }
+    </style>
+    <div class="row mt-5">
+        <div class="col-md-2">
+            <h5>Lunch Enrollments</h5>
+            <div class="fixed-table-container">
+                <table class="table table-striped table-hover fixed-header">
+                    <thead>
+                        <tr>
+                            <th>Date and Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enrollment in lunchEnrollments %}
+                        <tr>
+                            <td>{{ enrollment.enrolled_on }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    
+        <div class="col-md-10">
+            <h5>Vehicle Usage</h5>
+            <div class="fixed-table-container">
+                <table class="table table-striped table-hover fixed-header">
+                    <thead>
+                        <tr>
+                            <th>Car</th>
+                            <th>Date</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Origin</th>
+                            <th>Destination</th>
+                            <th>Distance</th>
+                            <th>Purpose</th>
+                            <th>Cost (BDT)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usage in carUsages %}
+                        <tr>
+                            <td>{{ usage.car.carModel }} - {{ usage.car.number }}</td>
+                            <td>{{ usage.usage_date }}</td>
+                            <td>{{ usage.startTime }}</td>
+                            <td>{{ usage.endTime }}</td>
+                            <td>{{ usage.origin }}</td>
+                            <td>{{ usage.destination }}</td>
+                            <td>{{ usage.distance_covered }}</td>
+                            <td>{{ usage.purpose }}</td>
+                            <td>{{ usage.distance_covered|multiply:usage.car.fuelReimbursement }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <h5>Reimbursement Requests</h5>
+            <div class="fixed-table-container">
+                <table class="table table-striped table-hover print-only-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Employee Name</th>
+                            <th>Phone</th>
+                            <th>Department</th>
+                            <th>Reason</th>
+                            <th>Purchased From</th>
+                            <th>Amount</th>
+                            <th>Apply Date</th>
+                            <th>Department Approval</th>
+                            <th>Commercial Approval</th>
+                            <th>Final Approval</th>
+                            <th>Money Recieved</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in reimbursements %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ item.employee.user.get_full_name }}</td>
+                            <td>{{ item.employee.phone }}</td>
+                            <td>{{ item.employee.department.name }}</td>
+                            <td>{{ item.reason }}</td>
+                            <td>{% if item.purchasedFrom %} {{ item.purchasedFrom }} {% else %} <h1 class="h4 text-center">-
+                                </h1> {% endif %}</td>
+                            <td>{{ item.amount }}</td>
+                            <td>{{ item.dateRequested }}</td>
+                            <td>
+                                {% if item.deptApproval == 'approved' %}
+                                <span class="badge bg-success">Approved</span><br> <span class="text-muted badge">{{ item.deptApprovedBy.user.get_full_name }}</span>
+                                {% elif item.deptApproval == 'pending' %}
+                                <span class="badge bg-warning">Pending</span><br> <span class="text-muted badge">{{ item.deptApprovedBy.user.get_full_name }}</span>
+                                {% else %}
+                                <span class="badge bg-danger">Declined</span><br> <span class="text-muted badge">{{ item.deptApprovedBy.user.get_full_name }}</span>
+                                {% endif %}
+                            </td>
+    
+                            <td>
+                                {% if item.commercialApproval == 'approved' %}
+                                <span class="badge bg-success">Approved</span><br> <span class="text-muted badge">{{ item.commercialApprovedBy.user.get_full_name }}</span>
+                                {% elif item.commercialApproval == 'pending' %}
+                                <span class="badge bg-warning">Pending</span><br> <span class="text-muted badge">{{ item.commercialApprovedBy.user.get_full_name }}</span>
+                                {% else %}
+                                <span class="badge bg-danger">Declined</span><br> <span class="text-muted badge">{{ item.commercialApprovedBy.user.get_full_name }}</span>
+                                {% endif %}
+                            </td>
+    
+                            <td>
+                                {% if item.finalApproval == 'approved' %}
+                                <span class="badge bg-success">Approved</span><br> <span class="text-muted badge">{{ item.finalApprovedBy.user.get_full_name }}</span>
+                                {% elif item.finalApproval == 'pending' %}
+                                <span class="badge bg-warning">Pending</span><br> <span class="text-muted badge">{{ item.finalApprovedBy.user.get_full_name }}</span>
+                                {% else %}
+                                <span class="badge bg-danger">Declined</span><br> <span class="text-muted badge">{{ item.finalApprovedBy.user.get_full_name }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.moneyRecieved %}
+                                <span class="badge bg-success">Recieved</span>
+                                {% else %}
+                                <span class="badge bg-danger">Not Recieved</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.remarks }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="12" class="text-center">No Reimbursement Request Found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+
+
+    <!-- Charts -->
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <h5>Benefits Summary</h5>
+            <canvas id="benefitsChart"></canvas>
+        </div>
+        <div class="col-md-6">
+            <h5>Placeholder Chart</h5>
+            <canvas id="secondChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    const benefitCtx = document.getElementById('benefitsChart').getContext('2d');
+    const benefitChart = new Chart(benefitCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_data.labels|safe }},
+            datasets: [{
+                label: 'Count',
+                data: {{ chart_data.values|safe }},
+                backgroundColor: ['#6c757d', '#198754', '#0d6efd', '#ffc107']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: 'Benefits Overview'
+                }
+            }
+        }
+    });
+
+    const secondCtx = document.getElementById('secondChart').getContext('2d');
+    const secondChart = new Chart(secondCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+            datasets: [{
+                label: 'Performance',
+                data: [10, 15, 12, 18, 14],
+                fill: false,
+                borderColor: '#0d6efd',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+</script>
+
+{% endblock %}

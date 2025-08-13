@@ -1,0 +1,256 @@
+{% extends 'layout.html' %}
+{% load custom_filters %}
+{% block body %}
+<style>
+    /* Ensure thead stays visible when scrolling */
+    .sticky-header th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background-color: #f8f9fa; /* matches Bootstrap table header color */
+    }
+</style>
+
+
+<!-- Modal -->
+<div class="modal fade" id="addAwardModal" tabindex="-1" aria-labelledby="addAwardModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <form method="POST" action="/employees/benefits/addCar">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="addAwardModalLabel">Add Car Facilities</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+        
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Title -->
+                    <div class="col-md-6 mb-3">
+                        <label>Car Model</label>
+                        <input type="text" name="carModel" class="form-control" required>
+                    </div>
+        
+                    <!-- Date Awarded -->
+                    <div class="col-md-6 mb-3">
+                        <label>Car Number</label>
+                        <input type="text" name="carNumber" class="form-control" required>
+                    </div>
+        
+                    <!-- Amount -->
+                    <div class="col-md-6 mb-3">
+                        <label>Inclusion Date</label>
+                        <input type="date" name="inclusionDate" class="form-control" required>
+                    </div>
+        
+                    <!-- Description -->
+                    <div class="col-md-12 mb-3">
+                        <label>Mileage Cost (BDT)</label>
+                        <input type="number" name="fuelReimbursement" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-dark">Save Car</button>
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+
+  <div class="modal fade" id="addAmenityModal" tabindex="-1" aria-labelledby="addAmenityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <form method="POST" action="/employees/benefits/addCarAmenity">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="addAwardModalLabel">Add Car Amenity</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+        
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Title -->
+                    <div class="col-md-6 mb-3">
+                      <label>Employee</label>
+                      <select name="employee" id="employee" class="form-control">
+                        {% for employee in employees %}
+                          <option value="{{ employee.id }}">{{ employee.user.first_name }} {{ employee.user.last_name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                      <label>Car</label>
+                      <select name="car" id="car" class="form-control">
+                        {% for car in cars %}
+                          <option value="{{ car.id }}">{{ car.carModel }} - {{ car.number }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label>Date</label>
+                    <input type="date" name="date" class="form-control" required>
+                  </div>
+
+
+                    <div class="col-md-6 mb-3">
+                      <label>Start Time</label>
+                      <input type="time" name="startTime" class="form-control" required>
+                    </div>
+
+=                  <div class="col-md-6 mb-3">
+                    <label>End Time</label>
+                    <input type="time" name="endTime" class="form-control" required>
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label>From</label>
+                    <input type="text" name="origin" class="form-control" required>
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label>To</label>
+                    <input type="text" name="destination" class="form-control" required>
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label>Distance Covered</label>
+                    <input type="number" name="distance" class="form-control" required>
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label>Purpose</label>
+                    <input name="purpose" id="purpose" class="form-control">
+                  </div>
+                </div>
+            </div>
+        
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-dark">Save Car</button>
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+<div class="d-flex" style="margin-top: 80px;">
+<div class="bg-light text-dark p-3" style="min-width: 250px; min-height: 100vh;">
+        <h5 class="text-center mb-4">Employee Benefits</h5>
+        <ul class="nav flex-column">
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewAwards' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewAwards">🏆 Awards and Incentives</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'healthInsurance' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/healthInsurance">💊 Health Insurance</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewCars' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewCars">🚗 Car</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewMobile' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewMobile">📱 Mobile</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewAccomodation' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewAccomodation">🏠 Accommodation</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewTravelAllowance' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewTravelAllowance">✈️ Travel Allowance</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark {% if 'viewFoodAndMeals' in request.path %}fw-bold shadow{% endif %}" href="/employees/benefits/viewFoodAndMeals">🍱 Food and Meals</a>
+          </li>
+          
+        </ul>
+      </div>
+    <div style="width: 1200px;">
+        <div class="d-flex mb-3">
+            <button class="btn btn-dark ms-auto" data-bs-toggle="modal" data-bs-target="#addAmenityModal"><i class="fa-solid fa-plus me-3"></i>Add Amenity</button>
+            <button class="btn btn-dark ms-2" data-bs-toggle="modal" data-bs-target="#addAwardModal"><i class="fa-solid fa-plus me-3"></i>Add Car</button>
+        </div>
+        
+
+        <style>
+          .table-container {
+            height: 300px;
+            overflow-y: auto;
+            position: relative;
+          }
+        
+          .sticky-header th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+          }
+        </style>
+        
+        <!-- 🚗 Car Info Table -->
+        <div class="table-container mb-4">
+          <table class="table table-striped mb-0">
+            <thead class="sticky-header">
+              <tr>
+                <th>Car Model</th>
+                <th>Car Number</th>
+                <th>Inclusion Date</th>
+                <th>Mileage Cost (BDT)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for car in cars %}
+              <tr>
+                <td>{{ car.carModel }}</td>
+                <td>{{ car.number }}</td>
+                <td>{{ car.inclusionDate }}</td>
+                <td>{{ car.fuelReimbursement }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- 🧑‍💼 Car Usage Table -->
+        <div class="table-container">
+          <table class="table table-striped mb-0">
+            <thead class="sticky-header">
+              <tr>
+                <th>Employee</th>
+                <th>Department</th>
+                <th>Car</th>
+                <th>Date</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Origin</th>
+                <th>Destination</th>
+                <th>Distance Covered</th>
+                <th>Purpose</th>
+                <th>Cost (BDT)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for usage in carUsage %}
+              <tr>
+                <td>{{ usage.employee.user.first_name }} {{ usage.employee.user.last_name }}</td>
+                <td>{{ usage.employee.department.name }}</td>
+                <td>{{ usage.car.carModel }} - {{ usage.car.number }}</td>
+                <td>{{ usage.usage_date }}</td>
+                <td>{{ usage.startTime }}</td>
+                <td>{{ usage.endTime }}</td>
+                <td>{{ usage.origin }}</td>
+                <td>{{ usage.destination }}</td>
+                <td>{{ usage.distance_covered }}</td>
+                <td>{{ usage.purpose }}</td>
+                <td>{{ usage.distance_covered|multiply:usage.car.fuelReimbursement }}</td>  
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        
+    </div>
+</div>
+
+
+{% endblock %}

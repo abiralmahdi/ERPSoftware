@@ -1,0 +1,281 @@
+{% extends 'layout.html' %}
+{% block body %}
+
+<style>
+    .card {
+        margin-bottom: 20px;
+    }
+    .card-title {
+        font-size: 1.25rem;
+        margin-bottom: 15px;
+    }
+</style>
+
+<div class="mx-5 mt-5 pt-4">
+    <div class="row">
+        <div class="col-md-6">
+        <h6 class="h6">Quick View</h6>
+        <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+            <table class="table table-striped table-hover table-sm">
+                <thead class="table-light" style="position: sticky; top: 0; z-index: 2;">
+                    <tr>
+                        <th>#</th>
+                        <th>Employee Name</th>
+                        <th>Designation</th>
+                        <th>Department</th>
+                        <th>Date</th>
+                        <th>In Time</th>
+                        <th>Out Time</th>
+                        <th>Remote</th>
+                        <th>Reason</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attn in attendances %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ attn.employee.user.get_full_name }}</td>
+                        <td>{{ attn.employee.designation.title }}</td>
+                        <td>{{ attn.employee.department.name }}</td>
+                        <td>{{ attn.date }}</td>
+                        <td>{{ attn.inTime }}</td>
+                        <td>{% if attn.outTime %}{{ attn.outTime }}{% endif %}</td>
+                        <td>
+                            {% if attn.remote %} 
+                                <i class="fa-solid text-success fa-check ms-3"></i>
+                            {% else %} 
+                                <i class="fa-solid text-danger fa-xmark ms-3"></i>
+                            {% endif %}
+                        </td>
+                        <td>{{attn.reason}}</td>
+                        <td>{{attn.location}}</td>
+                        <td>
+                            <span class="badge bg-{% if attn.status == 'present' %}success{% elif attn.status == 'leave' %}warning{% else %}danger{% endif %}">{{attn.status}}</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="text-center">No Attendance Records found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="table-responsive" style="max-height: 345px; overflow-y: auto;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Absent Employees</h6>
+                    <input type="text" id="filterName" placeholder="Search by name" class="form-control form-control-sm" style="width: 250px;">
+
+                    <select id="filterDepartment" class="form-control form-control-sm" style="width: 150px;">
+                        <option value="">All Departments</option>
+                        {% for dept in departments %}
+                        <option value="{{dept.name}}">{{dept.name}}</option>
+                        {% endfor %}
+                    </select>
+                    
+                    <input type="date" id="absentDate" class="form-control form-control-sm" style="width: 150px;">
+                </div>
+                <table class="table table-striped table-hover">
+                    <thead class="table-light position-sticky top-0">
+                        <tr>
+                            <th>#</th>
+                            <th>Employee Name</th>
+                            <th>Department</th>
+                            <th>Designation</th>
+                        </tr>
+                    </thead>
+                    <tbody id="absentTableBody">
+                        {% for absentee in absentees %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ absentee.user.get_full_name }}</td>
+                            <td>{{ absentee.department.name }}</td>
+                            <td>{{ absentee.designation.title }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">No absent employees found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+    </div>
+    <div class="row mt-3" style="height: 400px;">
+        <div class="col-12">
+            <div class="card shadow-sm" style="height: 100%;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Attendance Distribution</h5>
+                    <div class="d-flex gap-2">
+                        <input type="date" id="startDate" class="form-control form-control-sm">
+                        <input type="date" id="endDate" class="form-control form-control-sm">
+                    </div>
+                </div>
+                <div class="card-body" style="height: 325px;">
+                    <canvas id="attendanceChart" style="height: 100%; width: 100%;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+
+    
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const dateInput = document.getElementById("absentDate");
+    const deptInput = document.getElementById("filterDepartment");
+    const nameInput = document.getElementById("filterName");
+    const tableBody = document.getElementById("absentTableBody");
+
+    function loadAbsentees() {
+        const pickedDate = dateInput.value;
+        const department = deptInput.value;
+        const name = nameInput.value;
+
+        if (!pickedDate) return;
+
+        const params = new URLSearchParams({
+            date: pickedDate,
+            department: department,
+            name: name
+        });
+
+        fetch(`/attendance/get-absentees/?${params.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                tableBody.innerHTML = "";
+                if (data.absentees.length > 0) {
+                    data.absentees.forEach((emp, index) => {
+                        const row = `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${emp.name}</td>
+                                <td>${emp.department}</td>
+                                <td>${emp.designation}</td>
+                            </tr>
+                        `;
+                        tableBody.innerHTML += row;
+                    });
+                } else {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center">No absent employees found.</td>
+                        </tr>
+                    `;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-danger">Error loading data</td>
+                    </tr>
+                `;
+            });
+    }
+
+    // Set today's date and restrict future dates
+    const today = new Date().toISOString().split("T")[0];
+    dateInput.value = today;
+    dateInput.setAttribute("max", today);
+
+    // Load initial data
+    loadAbsentees();
+
+    // Event listeners for all filters
+    dateInput.addEventListener("change", loadAbsentees);
+    deptInput.addEventListener("change", loadAbsentees);
+    nameInput.addEventListener("input", loadAbsentees);
+});
+
+
+
+    </script>
+    
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const startInput = document.getElementById("startDate");
+            const endInput = document.getElementById("endDate");
+        
+            // Restrict future dates
+            const today = new Date();
+            const todayStr = today.toISOString().split("T")[0];
+            startInput.max = todayStr;
+            endInput.max = todayStr;
+        
+            // Calculate last 7 days
+            const last7Date = new Date();
+            last7Date.setDate(today.getDate() - 30); // include today
+            const last7Str = last7Date.toISOString().split("T")[0];
+        
+            // Set input values to last 7 days
+            startInput.value = last7Str;
+            endInput.value = todayStr;
+        
+            // Chart initialization
+            const ctx = document.getElementById("attendanceChart").getContext("2d");
+            let attendanceChart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: "Present", data: [], backgroundColor: "#28a745", stack: "attendance" },
+                        { label: "Absent", data: [], backgroundColor: "#dc3545", stack: "attendance" },
+                        { label: "Leave", data: [], backgroundColor: "#ffc107", stack: "attendance" }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: "top" } },
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true }
+                    }
+                }
+            });
+        
+            function fetchAttendanceData(start, end) {
+                if (!start || !end) return;
+        
+                fetch(`/attendance/attendance-data/?start=${start}&end=${end}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        attendanceChart.data.labels = data.labels;
+                        attendanceChart.data.datasets[0].data = data.present;
+                        attendanceChart.data.datasets[1].data = data.absent;
+                        attendanceChart.data.datasets[2].data = data.leave;
+                        attendanceChart.update();
+                    })
+                    .catch(err => console.error("Error fetching attendance data:", err));
+            }
+        
+            // Fetch when both dates are selected
+            startInput.addEventListener("change", () => {
+                if (startInput.value && endInput.value) fetchAttendanceData(startInput.value, endInput.value);
+            });
+        
+            endInput.addEventListener("change", () => {
+                if (startInput.value && endInput.value) fetchAttendanceData(startInput.value, endInput.value);
+            });
+        
+            // Auto-load last 7 days data on page load
+            fetchAttendanceData(last7Str, todayStr);
+        });
+        </script>
+        
+
+
+{% endblock %}
