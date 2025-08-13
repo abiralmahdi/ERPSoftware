@@ -3,8 +3,69 @@ from .models import *
 from employee.models import *
 from django.db.models import Q
 from datetime import datetime
-
+import random
+from django.utils import timezone
 def attendanceList(request):
+
+    # # Date range
+    # start_date = date(2025, 7, 1)
+    # end_date = date(2025, 8, 13)
+    # delta = end_date - start_date
+
+    # # Get all employees
+    # employees = Employee.objects.all()
+
+    # statuses = ['present', 'absent', 'leave']
+
+    # for i in range(delta.days + 1):
+    #     current_date = start_date + timedelta(days=i)
+    #     for emp in employees:
+    #         # Randomly pick status
+    #         status = random.choices(
+    #             statuses, weights=[0.7, 0.2, 0.1], k=1
+    #         )[0]  # More likely to be present
+
+    #         # Randomly decide if remote (only if present)
+    #         remote = random.choice([True, False]) if status == 'present' else False
+
+    #         # Random in/out times for present
+    #         if status == 'present':
+    #             in_hour = random.randint(8, 10)
+    #             in_minute = random.randint(0, 59)
+    #             out_hour = random.randint(17, 19)
+    #             out_minute = random.randint(0, 59)
+    #             in_time = timezone.datetime(2025, 1, 1, in_hour, in_minute).time()
+    #             out_time = timezone.datetime(2025, 1, 1, out_hour, out_minute).time()
+    #         else:
+    #             in_time = None
+    #             out_time = None
+
+    #         # Optional: random reason for leave/absent
+    #         reason = ""
+    #         if status in ['absent', 'leave']:
+    #             reason = random.choice([
+    #                 "Medical", "Personal", "Vacation", "Family reason", ""
+    #             ])
+
+    #         # Create Attendance record
+    #         Attendance.objects.create(
+    #             employee=emp,
+    #             date=current_date,
+    #             inTime=in_time if in_time else timezone.datetime(2025,1,1,9,0).time(),
+    #             outTime=out_time if out_time else None,
+    #             status=status,
+    #             remote=remote,
+    #             reason=reason,
+    #             location="Office",
+    #             longitude="",
+    #             latitude=""
+    #         )
+
+    # print("Attendance data populated successfully!")
+
+
+
+
     # Get filter/search inputs
     employee_search = request.GET.get('employeeSearch', '')
     dept_id = request.GET.get('department', '')
