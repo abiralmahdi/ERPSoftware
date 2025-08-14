@@ -5,71 +5,15 @@ from django.db.models import Q
 from datetime import datetime
 import random
 from django.utils import timezone
+
+
 def attendanceList(request):
-
-    # # Date range
-    # start_date = date(2025, 7, 1)
-    # end_date = date(2025, 8, 13)
-    # delta = end_date - start_date
-
-    # # Get all employees
-    # employees = Employee.objects.all()
-
-    # statuses = ['present', 'absent', 'leave']
-
-    # for i in range(delta.days + 1):
-    #     current_date = start_date + timedelta(days=i)
-    #     for emp in employees:
-    #         # Randomly pick status
-    #         status = random.choices(
-    #             statuses, weights=[0.7, 0.2, 0.1], k=1
-    #         )[0]  # More likely to be present
-
-    #         # Randomly decide if remote (only if present)
-    #         remote = random.choice([True, False]) if status == 'present' else False
-
-    #         # Random in/out times for present
-    #         if status == 'present':
-    #             in_hour = random.randint(8, 10)
-    #             in_minute = random.randint(0, 59)
-    #             out_hour = random.randint(17, 19)
-    #             out_minute = random.randint(0, 59)
-    #             in_time = timezone.datetime(2025, 1, 1, in_hour, in_minute).time()
-    #             out_time = timezone.datetime(2025, 1, 1, out_hour, out_minute).time()
-    #         else:
-    #             in_time = None
-    #             out_time = None
-
-    #         # Optional: random reason for leave/absent
-    #         reason = ""
-    #         if status in ['absent', 'leave']:
-    #             reason = random.choice([
-    #                 "Medical", "Personal", "Vacation", "Family reason", ""
-    #             ])
-
-    #         # Create Attendance record
-    #         Attendance.objects.create(
-    #             employee=emp,
-    #             date=current_date,
-    #             inTime=in_time if in_time else timezone.datetime(2025,1,1,9,0).time(),
-    #             outTime=out_time if out_time else None,
-    #             status=status,
-    #             remote=remote,
-    #             reason=reason,
-    #             location="Office",
-    #             longitude="",
-    #             latitude=""
-    #         )
-
-    # print("Attendance data populated successfully!")
-
-
-
-
     # Get filter/search inputs
     employee_search = request.GET.get('employeeSearch', '')
     dept_id = request.GET.get('department', '')
     desig_id = request.GET.get('designation', '')
+    status_filter = request.GET.get('status', '')
+    selected_date = request.GET.get('date', '')
 
     # Base queryset
     attendances = Attendance.objects.all()
@@ -89,13 +33,30 @@ def attendanceList(request):
     if desig_id:
         attendances = attendances.filter(employee__designation_id=desig_id)
 
+    # Filter by status
+    if status_filter:
+        attendances = attendances.filter(status=status_filter)
+
+    # Filter by date
+    if selected_date:
+        try:
+            date_obj = datetime.strptime(selected_date, "%Y-%m-%d").date()
+            attendances = attendances.filter(date=date_obj)
+        except ValueError:
+            pass  # Ignore if date parsing fails
+
+    # Show only latest 500 records if no filters are applied
+    if not (employee_search or dept_id or desig_id or status_filter or selected_date):
+        attendances = attendances.order_by('-date')[:500]
+    else:
+        attendances = attendances.order_by('-date')
+
     context = {
-        'attendances': attendances.order_by('-date'),
+        'attendances': attendances,
         'departments': Department.objects.all(),
         'designations': Designation.objects.all(),
     }
     return render(request, 'attendanceList.html', context)
-
 
 def attendanceDashboard(request):
     attendanceList = Attendance.objects.all().order_by('-date')
@@ -108,6 +69,63 @@ def attendanceDashboard(request):
         'absentees':absentEmployees
     }
     return render(request, 'attendanceDashboard.html', context)
+
+
+
+def get_quickview(request):
+    name = request.GET.get("name", "")
+    department = request.GET.get("department", "")
+    status = request.GET.get("status", "")
+    start_date = request.GET.get("start_date", "")
+    end_date = request.GET.get("end_date", "")
+
+    attendances = Attendance.objects.all()
+
+    if name:
+        attendances = attendances.filter(
+            Q(employee__user__first_name__icontains=name) |
+            Q(employee__user__last_name__icontains=name)
+        )
+
+    if department:
+        attendances = attendances.filter(employee__department__name__iexact=department)
+
+    if status:
+        attendances = attendances.filter(status=status)
+
+    # Filter by date range
+    if start_date:
+        try:
+            start_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+            attendances = attendances.filter(date__gte=start_obj)
+        except ValueError:
+            pass
+
+    if end_date:
+        try:
+            end_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+            attendances = attendances.filter(date__lte=end_obj)
+        except ValueError:
+            pass
+
+    data = []
+    for attn in attendances.order_by("-date"):
+        data.append({
+            "name": attn.employee.user.get_full_name() if attn.employee and attn.employee.user else "",
+            "designation": attn.employee.designation.title if attn.employee and attn.employee.designation else "",
+            "department": attn.employee.department.name if attn.employee and attn.employee.department else "",
+            "date": attn.date.strftime("%Y-%m-%d") if attn.date else "",
+            "in_time": attn.inTime.strftime("%H:%M:%S") if attn.inTime else "",
+            "out_time": attn.outTime.strftime("%H:%M:%S") if attn.outTime else "",
+            "remote": attn.remote if attn.remote is not None else False,
+            "reason": attn.reason if attn.reason else "",
+            "location": attn.location if attn.location else "",
+            "status": attn.status if attn.status else "",
+        })
+
+    return JsonResponse({"attendances": data})
+
+
 
 
 from django.http import JsonResponse
@@ -154,6 +172,7 @@ def get_absentees(request):
             "name": emp.user.get_full_name(),
             "department": emp.department.name if emp.department else "",
             "designation": emp.designation.title if emp.designation else "",
+            "absentNumber":len(absentees_qs)
         }
         for emp in absentees_qs
     ]

@@ -5,7 +5,7 @@ from employee.models import *
 class Attendance(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.PROTECT)
     date = models.DateField(auto_now_add=False)
-    inTime = models.TimeField(auto_now_add=True)
+    inTime = models.TimeField(auto_now_add=False, null=True, blank=True)
     outTime = models.TimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=[
         ('present', 'Present'),

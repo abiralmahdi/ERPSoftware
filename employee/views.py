@@ -1,6 +1,11 @@
 from django.shortcuts import render, redirect
 from .models import *
 from django.contrib.auth.models import User
+from .checkNewUser import sync_employees_from_zkteco
+
+def scanNewEmployee(request):
+    sync_employees_from_zkteco()
+    return redirect('employee_list')
 
 def employee_list(request):
     employees = Employee.objects.select_related('user', 'department', 'designation')

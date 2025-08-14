@@ -8,9 +8,14 @@
         z-index: 2;
         background-color: #f8f9fa; /* matches Bootstrap table header color */
     }
+
+    /* Reduce table row height by lowering padding */
+    .table th, 
+    .table td {
+        padding-top: 0.2rem;
+        padding-bottom: 0.1rem;
+    }
 </style>
-
-
 <!-- Modal -->
 <div class="modal fade" id="addEmployeeModal" tabindex="-1" aria-labelledby="addEmployeeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -145,6 +150,7 @@
             </select>
         </form>
         <button class="btn btn-dark ms-auto" data-bs-toggle="modal" data-bs-target="#addEmployeeModal"><i class="fa-solid fa-plus me-3"></i>Add Employee</button>
+        <a href="/employees/scanNewEmployee" class="btn btn-dark ms-2" ><i class="fa-solid fa-magnifying-glass me-3"></i>Scan New Employees</a>
     </div>
     
 

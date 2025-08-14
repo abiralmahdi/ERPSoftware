@@ -17,6 +17,7 @@ class Designation(models.Model):
 
 
 class Employee(models.Model):
+    fingerPrintID = models.IntegerField(unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='employee')
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, related_name='employees')
     designation = models.ForeignKey(Designation, on_delete=models.SET_NULL, null=True, related_name='employees')
@@ -78,8 +79,8 @@ class Mobile(models.Model):
     file = models.FileField(upload_to='mobile_reimbursement')
 
 
-    def __str__(self):
-        return f"{self.mobile_number} - {self.employee.user.get_full_name()}"
+    # def __str__(self):
+    #     return f"{self.mobile_number} - {self.employee.user.get_full_name()}"
     
 class Accomodation(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='accomodations')

@@ -2,10 +2,11 @@
 {% block body %}
 <div class="container mt-5 pt-5" style=" min-width: 1600px">
     <form method="get" class="row g-2 mb-3">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <input type="text" name="employeeSearch" class="form-control" placeholder="Search by Employee Name" value="{{ request.GET.employeeSearch }}">
         </div>
-        <div class="col-md-3">
+    
+        <div class="col-md-2">
             <select name="department" class="form-select">
                 <option value="">All Departments</option>
                 {% for dept in departments %}
@@ -13,7 +14,8 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-3">
+    
+        <div class="col-md-2">
             <select name="designation" class="form-select">
                 <option value="">All Designations</option>
                 {% for desig in designations %}
@@ -21,7 +23,23 @@
                 {% endfor %}
             </select>
         </div>
+    
+        <!-- New Status Filter -->
         <div class="col-md-2">
+            <select name="status" class="form-select">
+                <option value="">All Status</option>
+                <option value="present" {% if request.GET.status == 'present' %}selected{% endif %}>Present</option>
+                <option value="absent" {% if request.GET.status == 'absent' %}selected{% endif %}>Absent</option>
+                <option value="leave" {% if request.GET.status == 'leave' %}selected{% endif %}>Leave</option>
+            </select>
+        </div>
+    
+        <!-- Date Picker -->
+        <div class="col-md-2">
+            <input type="date" name="date" class="form-control" value="{{ request.GET.date }}">
+        </div>
+    
+        <div class="col-md-1 ms-auto">
             <button class="btn btn-dark w-100" type="submit">Filter</button>
         </div>
     </form>

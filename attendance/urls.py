@@ -6,4 +6,5 @@ urlpatterns = [
     path('attendanceDashboard', views.attendanceDashboard, name='attendanceDashboard'),
     path("get-absentees/", views.get_absentees, name="get_absentees"),
     path("attendance-data/", views.attendance_chart_data, name="attendance_chart_data"),
+    path("get-quickview/", views.get_quickview, name="get_quickview"),
 ]
