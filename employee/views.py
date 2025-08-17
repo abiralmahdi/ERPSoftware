@@ -2,12 +2,16 @@ from django.shortcuts import render, redirect
 from .models import *
 from django.contrib.auth.models import User
 from .checkNewUser import sync_employees_from_zkteco
+from leave.models import LeaveApplications, VisitApplications
+from attendance.models import Attendance
+from core.models import GlobalConfig
 
 def scanNewEmployee(request):
     sync_employees_from_zkteco()
     return redirect('employee_list')
 
 def employee_list(request):
+    globalConfig = GlobalConfig.objects.all().first()
     employees = Employee.objects.select_related('user', 'department', 'designation')
     departments = Department.objects.all()
     designations = Designation.objects.all()
@@ -15,7 +19,8 @@ def employee_list(request):
     context = {
         'employees': employees,
         'departments': departments,
-        'designations': designations
+        'designations': designations,
+        'globalConfig':globalConfig
     }
     return render(request, 'employeeList.html', context)
 
@@ -98,6 +103,7 @@ def editEmployee(request, employeeID):
 from django.db.models import Value, CharField
 from django.db.models.functions import Concat
 def getEmployee(request):
+    globalConfig = GlobalConfig.objects.all().first()
     departments = Department.objects.all()
     designations = Designation.objects.all()
 
@@ -121,19 +127,26 @@ def getEmployee(request):
         context = {
             'employees': employees,
             'departments': departments,
-            'designations': designations
+            'designations': designations,
+        'globalConfig':globalConfig
         }
         return render(request, 'employeeList.html', context)
     
 
 
 def indivEmployee(request, employeeID):
+    globalConfig = GlobalConfig.objects.all().first()
     employee = get_object_or_404(Employee, id=employeeID)
     designations = Designation.objects.all()
     departments = Department.objects.all()
     lunchEnrollments = LunchEnrollment.objects.filter(employee=employee)
     carUsages = CarUsage.objects.filter(employee=employee)
     reimbursements = Reimbursements.objects.filter(employee=employee)
+    leave = LeaveApplications.objects.filter(employee=employee)
+    attendance = Attendance.objects.filter(employee=employee)
+    visits = VisitApplications.objects.filter(employee=employee)
+    
+
     # Example chart data (replace with actual data)
     chart_data = {
         "labels": ["Award", "Insurance", "Incentives", "Travel"],
@@ -147,21 +160,28 @@ def indivEmployee(request, employeeID):
         'departments': departments,
         'lunchEnrollments': lunchEnrollments,
         'carUsages':carUsages, 
-        'reimbursements':reimbursements
+        'reimbursements':reimbursements,
+        'leave':leave,
+        'attendances':attendance.order_by('-date'),
+        'visits':visits,
+        'globalConfig':globalConfig
     })
 
 
 
 def viewAwards(request):
+    globalConfig = GlobalConfig.objects.all().first()
     awards = Award.objects.all()
     employees = Employee.objects.all()
     context = {
         'awards': awards,
-        'employees':employees
+        'employees':employees,
+        'globalConfig':globalConfig
     }
     return render(request, 'awards.html', context)
 
 def addAwards(request):
+    globalConfig = GlobalConfig.objects.all().first()
     if request.method == 'POST':
         employee_id = request.POST['employee']
         title = request.POST['title']
@@ -185,11 +205,13 @@ def addAwards(request):
 
 
 def viewHealthInsurance(request):
+    globalConfig = GlobalConfig.objects.all().first()
     health_insurances = HealthInsurance.objects.all()
     employees = Employee.objects.all()
     context = {
         'insurances': health_insurances,
-        'employees': employees
+        'employees': employees,
+        'globalConfig':globalConfig
     }
     return render(request, 'healthInsurance.html', context)
 
@@ -223,13 +245,15 @@ def addHealthInsurance(request):
 
 
 def viewCar(request):
+    globalConfig = GlobalConfig.objects.all().first()
     cars = Car.objects.all()
     carAmenities = CarUsage.objects.all()
     employees = Employee.objects.all()
     context = {
         'cars': cars,
         'carUsage':carAmenities,
-        'employees': employees
+        'employees': employees,
+        'globalConfig':globalConfig
     }
     return render(request, 'car.html', context)
 
@@ -276,11 +300,13 @@ def addCarAmenity(request):
 
 
 def viewMobile(request):
+    globalConfig = GlobalConfig.objects.all().first()
     mobiles = Mobile.objects.all()
     employees = Employee.objects.all()
     context = {
         'mobiles':mobiles,
-        'employees': employees
+        'employees': employees,
+        'globalConfig':globalConfig
     }
     return render(request, 'mobile.html', context)
 
@@ -307,11 +333,13 @@ def addMobile(request):
 
 
 def viewAccomodation(request):
+    globalConfig = GlobalConfig.objects.all().first()
     accomodations = Accomodation.objects.all()
     employees = Employee.objects.all()
     context = {
         'accomodations': accomodations,
-        'employees': employees
+        'employees': employees,
+        'globalConfig':globalConfig
     }
     return render(request, 'accomodation.html', context)
 
@@ -335,11 +363,13 @@ def addAccomodation(request):
 
 
 def viewTravelAllowance(request):
+    globalConfig = GlobalConfig.objects.all().first()
     travel_allowances = TravelAllowance.objects.all()
     employees = Employee.objects.all()
     context = {
         'allowances': travel_allowances,
-        'employees': employees
+        'employees': employees,
+        'globalConfig':globalConfig
     }
     return render(request, 'travelAllowance.html', context)
 
@@ -362,6 +392,7 @@ def addTravelAllowance(request):
 
 
 def departments(request):
+    globalConfig = GlobalConfig.objects.all().first()
     if request.method == 'POST':
         # Check which form was submitted
         if 'deptName' in request.POST:
@@ -383,10 +414,12 @@ def departments(request):
     return render(request, 'departments.html', {
         'departments': departments,
         'designations': designations,
+        'globalConfig':globalConfig
     })
 
 from datetime import datetime
 def viewFoodAndMeals(request):
+    globalConfig = GlobalConfig.objects.all().first()
     date_str = request.GET.get('date')
     selected_date = None
 
@@ -405,6 +438,7 @@ def viewFoodAndMeals(request):
         'enrollments': enrollments.select_related('employee__user', 'employee__department'),
         'employees': employees,
         'selected_date': date_str,
+        'globalConfig':globalConfig
     })
 
 
@@ -425,6 +459,7 @@ def add_lunch_enrollment(request):
     
 
 def reimbursement_requests(request):
+    globalConfig = GlobalConfig.objects.all().first()
     user = request.user
     employee = Employee.objects.get(user=user)
 
@@ -463,6 +498,7 @@ def reimbursement_requests(request):
     context = {
         "reimbursements": reimbursements.order_by('-dateRequested'),
         "selected_date": selected_date,
+        'globalConfig':globalConfig
     }
     return render(request, "reimbursement.html", context)
 

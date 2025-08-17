@@ -73,6 +73,10 @@ class VisitApplications(models.Model):
     )
 
     remarks = models.CharField(max_length=100, default='')
+    photo = models.ImageField(upload_to="attendance_photos/", null=True, blank=True)
+    latitude = models.CharField(default='', null=True, blank=True, max_length=100)
+    longitude = models.CharField(default='', null=True, blank=True, max_length=100)
+
 
     def __str__(self):
         return f"{self.employee.user.get_full_name()} - {self.visitTo} ({self.startDate} to {self.endDate})"

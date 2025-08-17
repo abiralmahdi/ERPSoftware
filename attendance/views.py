@@ -1,13 +1,15 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .models import *
 from employee.models import *
 from django.db.models import Q
 from datetime import datetime
 import random
 from django.utils import timezone
-
+from leave.models import *
+from core.models import GlobalConfig
 
 def attendanceList(request):
+    globalConfig = GlobalConfig.objects.all().first()
     # Get filter/search inputs
     employee_search = request.GET.get('employeeSearch', '')
     dept_id = request.GET.get('department', '')
@@ -55,10 +57,12 @@ def attendanceList(request):
         'attendances': attendances,
         'departments': Department.objects.all(),
         'designations': Designation.objects.all(),
+        'globalConfig':globalConfig
     }
     return render(request, 'attendanceList.html', context)
 
 def attendanceDashboard(request):
+    globalConfig = GlobalConfig.objects.all().first()
     attendanceList = Attendance.objects.all().order_by('-date')
     absentEmployees = Employee.objects.exclude(id__in=attendanceList.filter(date=datetime.today()))
 
@@ -66,13 +70,15 @@ def attendanceDashboard(request):
         'attendances': attendanceList,
         'departments': Department.objects.all(),
         'designations': Designation.objects.all(),
-        'absentees':absentEmployees
+        'absentees':absentEmployees,
+        'globalConfig':globalConfig
     }
     return render(request, 'attendanceDashboard.html', context)
 
 
 
 def get_quickview(request):
+    globalConfig = GlobalConfig.objects.all().first()
     name = request.GET.get("name", "")
     department = request.GET.get("department", "")
     status = request.GET.get("status", "")
@@ -222,3 +228,105 @@ def attendance_chart_data(request):
         "absent": absent_data,
         "leave": leave_data
     })
+
+
+def remoteAttendance(request):
+    globalConfig = GlobalConfig.objects.all().first()
+    # Get filter/search inputs
+    employee_search = request.GET.get('employeeSearch', '')
+    dept_id = request.GET.get('department', '')
+    desig_id = request.GET.get('designation', '')
+    status_filter = request.GET.get('status', '')
+    selected_date = request.GET.get('date', '')
+
+    # Base queryset
+    attendances = Attendance.objects.filter(remote=True)
+
+    # Search by employee name
+    if employee_search:
+        attendances = attendances.filter(
+            Q(employee__user__first_name__icontains=employee_search) |
+            Q(employee__user__last_name__icontains=employee_search)
+        )
+
+    # Filter by department
+    if dept_id:
+        attendances = attendances.filter(employee__department_id=dept_id)
+
+    # Filter by designation
+    if desig_id:
+        attendances = attendances.filter(employee__designation_id=desig_id)
+
+    # Filter by status
+    if status_filter:
+        attendances = attendances.filter(status=status_filter)
+
+    # Filter by date
+    if selected_date:
+        try:
+            date_obj = datetime.strptime(selected_date, "%Y-%m-%d").date()
+            attendances = attendances.filter(date=date_obj)
+        except ValueError:
+            pass  # Ignore if date parsing fails
+
+
+    context = {
+        'attendances': attendances.order_by('-date'),
+        'departments': Department.objects.all(),
+        'designations': Designation.objects.all(),
+        'globalConfig':globalConfig
+    }
+    return render(request, 'remoteAttendance.html', context)
+
+
+import base64
+from django.core.files.base import ContentFile
+
+ 
+def submitAttendance(request):
+    if request.method == "POST":
+        try:
+            employee = Employee.objects.get(user=request.user)
+        except Employee.DoesNotExist:
+            return redirect("/attendance/remoteAttendance")  # adjust redirect
+
+        # --- Attendance form data ---
+        reason = request.POST.get("reason", "")
+        location = request.POST.get("location", "")
+        lat = request.POST.get("latitude", "")
+        lon = request.POST.get("longitude", "")
+        
+
+        # Handle image (if captured from camera as base64)
+        image_data = request.POST.get("captured_image")  # base64 string from hidden input
+        image_file = None
+        if image_data:
+            format, imgstr = image_data.split(';base64,')
+            ext = format.split('/')[-1]
+            image_file = ContentFile(
+                base64.b64decode(imgstr),
+                name=f"{request.user.username}_{timezone.now().strftime('%Y%m%d%H%M%S')}.{ext}"
+            )
+
+        VisitApplications.objects.create(
+            employee=employee,
+            visitTo=location,
+            reason=reason,
+            startDate=timezone.now().date(),
+            endDate=timezone.now().date(),
+            photo=image_file,
+            latitude=lat,
+            longitude=lon, 
+        )
+
+        return redirect("/attendance/remoteAttendance")  # adjust redirect
+
+    return redirect("/attendance/remoteAttendance")
+
+
+def outTime(request, attendanceID):
+    attendance = Attendance.objects.get(id=int(attendanceID))
+    if attendance.outTime is None:
+        attendance.outTime = timezone.now()
+        attendance.save()
+    return redirect("/attendance/remoteAttendance")  # adjust redirect

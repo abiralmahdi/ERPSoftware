@@ -17,5 +17,7 @@ class Attendance(models.Model):
     location = models.CharField(max_length=100, null=True, blank=True, default="")
     longitude = models.CharField(max_length=100, null=True, blank=True, default="")
     latitude = models.CharField(max_length=100, null=True, blank=True, default="")
+    photo = models.ImageField(upload_to="attendance_photos/", null=True, blank=True)
 
-        
+
+    

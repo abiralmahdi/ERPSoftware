@@ -1,0 +1,350 @@
+{% extends 'layout.html' %}
+{% block body %}
+<div class="container mt-5 pt-5" style=" min-width: 1600px">
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-2">
+            <input type="text" name="employeeSearch" class="form-control" placeholder="Search by Employee Name" value="{{ request.GET.employeeSearch }}">
+        </div>
+    
+        <div class="col-md-1">
+            <select name="department" class="form-select">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                <option value="{{ dept.id }}" {% if request.GET.department == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    
+        <div class="col-md-2">
+            <select name="designation" class="form-select">
+                <option value="">All Designations</option>
+                {% for desig in designations %}
+                <option value="{{ desig.id }}" {% if request.GET.designation == desig.id|stringformat:"s" %}selected{% endif %}>{{ desig.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    
+        <!-- New Status Filter -->
+        <div class="col-md-2">
+            <select name="status" class="form-select">
+                <option value="">All Status</option>
+                <option value="present" {% if request.GET.status == 'present' %}selected{% endif %}>Present</option>
+                <option value="absent" {% if request.GET.status == 'absent' %}selected{% endif %}>Absent</option>
+                <option value="leave" {% if request.GET.status == 'leave' %}selected{% endif %}>Leave</option>
+            </select>
+        </div>
+    
+        <!-- Date Picker -->
+        <div class="col-md-2">
+            <input type="date" name="date" class="form-control" value="{{ request.GET.date }}">
+        </div>
+    
+        <div class="col-md-1 ms-auto">
+            <button class="btn btn-dark w-100" type="submit">Filter</button>
+        </div>
+        <button type="button" class="btn btn-dark col-md-2" data-bs-toggle="modal" data-bs-target="#remoteModal">
+            Give Remote Attendance
+          </button>
+    </form>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                <table class="table table-striped table-hover table-sm">
+                    <thead class="table-light" style="position: sticky; top: 0; z-index: 2;">
+                        <tr>
+                            <th>#</th>
+                            <th>Employee Name</th>
+                            <th>Designation</th>
+                            <th>Department</th>
+                            <th>Date</th>
+                            <th>In Time</th>
+                            <th>Out Time</th>
+                            <th>Remote</th>
+                            <th>Reason</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attn in attendances %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ attn.employee.user.get_full_name }}</td>
+                            <td>{{ attn.employee.designation.title }}</td>
+                            <td>{{ attn.employee.department.name }}</td>
+                            <td>{{ attn.date }}</td>
+                            <td>{{ attn.inTime }}</td>
+                            <td>{% if attn.outTime %}{{ attn.outTime }}{% endif %}</td>
+                            <td>
+                                {% if attn.remote %} 
+                                    <a href="/leave/visitApplications"><i class="fa-solid text-success fa-check ms-3"></i></a>
+                                {% else %} 
+                                    <i class="fa-solid text-danger fa-xmark ms-3"></i>
+                                {% endif %}
+                            </td>
+                            <td>{{attn.reason}}</td>
+                            <td>{{attn.location}}</td>
+                            <td>
+                                <span class="badge bg-{% if attn.status == 'present' %}success{% elif attn.status == 'leave' %}warning{% else %}danger{% endif %}">{{attn.status}}</span>
+                            </td>
+                            <td>
+                              <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#attendanceDetailsModal" 
+                              data-location="{{ attn.location }}" 
+                              data-reason="{{ attn.reason }}" 
+                              data-image="{{ attn.photo.url }}" 
+                              data-lat="{{ attn.latitude }}" 
+                              data-lon="{{ attn.longitude }}"
+                              data-id="{{attn.id}}">
+                                  Details
+                              </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="11" class="text-center">No Attendance Records found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="attendanceDetailsModal" tabindex="-1" aria-labelledby="attendanceDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="attendanceDetailsModalLabel">Attendance Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="container-fluid">
+          <!-- Top row: Location and Reason -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <h6><strong>Location:</strong> <span id="detailLocation"></span></h6>
+            </div>
+            <div class="col-md-6">
+              <h6><strong>Reason:</strong> <span id="detailReason"></span></h6>
+            </div>
+          </div>
+
+          <!-- Bottom row: Image and Map -->
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <img id="detailImage" src="" class="img-fluid rounded shadow-sm" alt="Attendance Image" style="max-height: 400px; object-fit: cover; width:100%;">
+            </div>
+            <div class="col-md-6 mb-3">
+              <div id="detailMap" style="height: 400px; width: 100%;" class="rounded shadow-sm border"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer" id="footerModal">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" id="remoteModal" tabindex="-1" aria-labelledby="remoteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      
+      <div class="modal-header">
+        <h5 class="modal-title" id="remoteModalLabel">Remote Attendance Form</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <div class="modal-body">
+        <form id="remoteForm" method="POST" action="/attendance/submitAttendance" enctype="multipart/form-data">
+          {% csrf_token %}
+          
+          <!-- Remote Location -->
+          <div class="mb-3">
+            <label for="remoteLocation" class="form-label">Remote Location</label>
+            <input type="text" class="form-control" id="remoteLocation" name="location" required>
+          </div>
+          
+          <!-- Reason -->
+          <div class="mb-3">
+            <label for="reason" class="form-label">Reason</label>
+            <textarea class="form-control" id="reason" name="reason" rows="3" required></textarea>
+          </div>
+          
+          <!-- Camera & Captured Image Side by Side -->
+          <div class="mb-3">
+            <label class="form-label">Capture Image</label>
+            <div class="row g-3">
+              
+              <!-- Video Preview -->
+              <div class="col-md-6 text-center">
+                <video id="camera" class="w-100 rounded border" style="height: 300px; object-fit: cover;" autoplay></video>
+                <button type="button" class="btn btn-secondary mt-2" id="captureBtn">Capture</button>
+              </div>
+              
+              <!-- Captured Image Preview -->
+              <div class="col-md-6 text-center">
+                <div class="border rounded d-flex align-items-center justify-content-center" style="height: 300px;">
+                  <img id="preview" src="" class="img-fluid d-none" style="max-height: 100%; object-fit: contain;"/>
+                  <span id="noImageText" class="text-muted">No image captured</span>
+                </div>
+              </div>
+              
+            </div>
+            
+            <!-- Hidden inputs -->
+            <canvas id="snapshot" width="640" height="480" class="d-none"></canvas>
+            <input type="hidden" name="captured_image" id="capturedImageInput">
+            <input type="hidden" name="latitude" id="latitude">
+            <input type="hidden" name="longitude" id="longitude">
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="submit" form="remoteForm" class="btn btn-success">Submit</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<script>
+  // When image captured, show preview and hide "No image" text
+  document.getElementById('captureBtn').addEventListener('click', function() {
+    const noImageText = document.getElementById('noImageText');
+    const preview = document.getElementById('preview');
+    
+    noImageText.classList.add('d-none');
+    preview.classList.remove('d-none');
+  });
+</script>
+
+  <script>
+    // Access camera
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('snapshot');
+    const captureBtn = document.getElementById('captureBtn');
+    const preview = document.getElementById('preview');
+    const capturedImageInput = document.getElementById('capturedImageInput');
+  
+    if (navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(stream) {
+          video.srcObject = stream;
+        })
+        .catch(function(err) {
+          console.log("Something went wrong: " + err);
+        });
+    }
+  
+    // Capture snapshot
+    captureBtn.addEventListener('click', function() {
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      const dataUrl = canvas.toDataURL('image/png');
+      capturedImageInput.value = dataUrl;
+      
+      preview.src = dataUrl;
+      preview.classList.remove("d-none");
+    });
+
+    if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition((position) => {
+    document.getElementById('latitude').value = position.coords.latitude;
+    document.getElementById('longitude').value = position.coords.longitude;
+  });
+}
+
+  </script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var detailsModal = document.getElementById('attendanceDetailsModal');
+        var map; // MapLibre instance
+        var marker;
+        var toggleButton;
+    
+        detailsModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+    
+            var location = button.getAttribute('data-location') || '';
+            var reason = button.getAttribute('data-reason') || '';
+            var image = button.getAttribute('data-image') || '';
+            var lat = parseFloat(button.getAttribute('data-lon')) || 0; // fixed lat/lon
+            var lon = parseFloat(button.getAttribute('data-lat')) || 0;
+            
+            document.getElementById('footerModal').innerHTML = `
+            <a href="/attendance/outTime/${button.getAttribute('data-id')}" class="btn btn-dark btn-sm">Check Out</a>
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            `
+    
+            document.getElementById('detailLocation').textContent = location;
+            document.getElementById('detailReason').textContent = reason;
+            document.getElementById('detailImage').src = image;
+    
+            if (lat && lon) {
+                // Initialize map only once
+                if (!map) {
+                    map = new maplibregl.Map({
+                        container: 'detailMap',
+                        style: `https://api.maptiler.com/maps/streets/style.json?key=bTM3XgZCdvXvDegFIcUs`,
+                        center: [lon, lat],
+                        zoom: 15
+                    });
+    
+                    marker = new maplibregl.Marker().setLngLat([lon, lat]).addTo(map);
+                    map.addControl(new maplibregl.NavigationControl());
+    
+                    // Prepare toggle button but do not append yet
+                    toggleButton = document.createElement('button');
+                    toggleButton.textContent = 'Satellite View';
+                    toggleButton.className = 'btn btn-sm btn-dark';
+                    toggleButton.style.position = 'absolute';
+                    toggleButton.style.top = '10px';
+                    toggleButton.style.right = '10px';
+                    toggleButton.onclick = () => {
+                        const currentStyle = map.getStyle().metadata['maptiler:style'];
+                        if (currentStyle === 'streets') {
+                            map.setStyle(`https://api.maptiler.com/maps/hybrid/style.json?key=bTM3XgZCdvXvDegFIcUs`);
+                            toggleButton.textContent = 'Street View';
+                        } else {
+                            map.setStyle(`https://api.maptiler.com/maps/streets/style.json?key=bTM3XgZCdvXvDegFIcUs`);
+                            toggleButton.textContent = 'Satellite View';
+                        }
+                    };
+                } else {
+                    map.setCenter([lon, lat]);
+                    map.setZoom(15);
+                    if (marker) marker.setLngLat([lon, lat]);
+                }
+            }
+        });
+    
+        // After modal is fully visible, resize the map to fit container
+        detailsModal.addEventListener('shown.bs.modal', function () {
+            if (map) {
+                map.resize(); // this makes the map fill the div
+                // Append toggle button after resize (only once)
+                if (toggleButton && !document.getElementById('detailMap').contains(toggleButton)) {
+                    map.getContainer().appendChild(toggleButton);
+                }
+            }
+        });
+    });
+    </script>
+       
+{% endblock %}

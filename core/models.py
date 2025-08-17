@@ -6,4 +6,6 @@ class GlobalConfig(models.Model):
     medicallLeave = models.IntegerField()
     annualLeave = models.IntegerField()
     otherLeave = models.IntegerField()
+    leaveNotification = models.BooleanField(default=False)
+    visitNotification = models.BooleanField(default=False)
     

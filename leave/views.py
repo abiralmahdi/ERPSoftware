@@ -5,7 +5,6 @@ from django.db.models import Q
 from django.contrib.auth.models import User
 from core.models import GlobalConfig
 
-
 def leaveApplications(request):
     globalConfig = GlobalConfig.objects.all().first()
     if request.method == 'POST' and 'apply_leave' in request.POST:
@@ -25,6 +24,8 @@ def leaveApplications(request):
             endDate=end_date,
             reason=reason,
         )
+        globalConfig.leaveNotification = True
+        globalConfig.save()
         return redirect('leaveApplications')  # Replace with your URL name
 
     # Search and filter logic
@@ -57,6 +58,7 @@ def leaveApplications(request):
         "departments": Department.objects.all(),
         "employees": Employee.objects.all(),
         "designations": Designation.objects.all(),
+        'globalConfig':globalConfig
     }
     return render(request, 'leaveApplications.html', context)
 
@@ -90,6 +92,8 @@ def approveLeave(request, applicationID):
             leaveApplication.employee.otherLeave = count - difference.days
 
         leaveApplication.employee.save()
+        globalConfig.leaveNotification = False
+        globalConfig.save()
 
     leaveApplication.save()
     return redirect('/leave/leaveApplications')
@@ -113,6 +117,8 @@ def declineLeave(request, applicationID):
         leaveApplication.finalApprovedBy = request.user.employee
     
     leaveApplication.save()
+    globalConfig.leaveNotification = False
+    globalConfig.save()
     return redirect('/leave/leaveApplications')
 
 
@@ -185,6 +191,8 @@ def visitApplications(request):
             reason=reason,
             visitTo=visitTo
         )
+        globalConfig.visitNotification = True
+        globalConfig.save()
         return redirect('/leave/visitApplications')
 
     # Search and filter logic
@@ -216,13 +224,22 @@ def visitApplications(request):
         "departments": Department.objects.all(),
         "employees": Employee.objects.all(),
         "designations": Designation.objects.all(),
+        'globalConfig':globalConfig
     }
     return render(request, 'visitApplications.html', context)
 
 
+
+import base64
+from django.core.files.base import ContentFile
+import requests
+from attendance.models import Attendance
+from django.utils import timezone
+
+
 def approveVisit(request, applicationID):
     visitApplication = get_object_or_404(VisitApplications, id=applicationID)
-
+    globalConfig = GlobalConfig.objects.first()
     if request.user.employee.designation.level == 2:
         visitApplication.deptApproval = 'approved'
         visitApplication.deptApprovedBy = request.user.employee
@@ -233,13 +250,29 @@ def approveVisit(request, applicationID):
         visitApplication.finalApproval = 'approved'
         visitApplication.finalApprovedBy = request.user.employee
 
+        # Save Attendance
+        attendance = Attendance.objects.create(
+            employee=visitApplication.employee,
+            date=timezone.now().date(),
+            inTime=timezone.now().time(),
+            status="present",
+            remote=True,
+            reason=visitApplication.reason,
+            location=visitApplication.visitTo,
+            longitude=visitApplication.latitude,
+            latitude=visitApplication.longitude,
+            photo=visitApplication.photo  # optional: make sure your model has ImageField named 'photo'
+        )
+
     visitApplication.save()
+    globalConfig.visitNotification = False
+    globalConfig.save()
     return redirect('/leave/visitApplications')
 
 
 def declineVisit(request, applicationID):
     visitApplication = get_object_or_404(VisitApplications, id=applicationID)
-
+    globalConfig = GlobalConfig.objects.all().first()
     if request.method == 'POST':
         remarks = request.POST.get('remarks', '')
         visitApplication.remarks = remarks
@@ -255,6 +288,9 @@ def declineVisit(request, applicationID):
             visitApplication.finalApprovedBy = request.user.employee
 
         visitApplication.save()
+        globalConfig.visitNotification = False
+        globalConfig.save()
+
 
     return redirect('/leave/visitApplications')
 

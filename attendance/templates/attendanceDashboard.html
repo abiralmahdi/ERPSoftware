@@ -15,17 +15,17 @@
     <div class="row">
         <div class="col-md-6">
             <div class="d-flex mb-2 gap-2">
-                <h6 class="h6 mt-2" id="quickViewTitle">Quick View</h6>
-                <input type="text" id="quickViewName" placeholder="Search by name" class="form-control form-control-sm" style="width: 200px;">
+                <h6 class="h6 mt-2" id="quickViewTitle">Overall</h6>
+                <input type="text" id="quickViewName" placeholder="Search by name" class="form-control form-control-sm" style="width: 150px;">
             
-                <select id="quickViewDepartment" class="form-control form-control-sm" style="width: 130px;">
+                <select id="quickViewDepartment" class="form-control form-control-sm" style="width: 110px;">
                     <option value="">All Departments</option>
                     {% for dept in departments %}
                     <option value="{{ dept.name }}">{{ dept.name }}</option>
                     {% endfor %}
                 </select>
             
-                <select id="quickViewStatus" class="form-control form-control-sm" style="width: 130px;">
+                <select id="quickViewStatus" class="form-control form-control-sm" style="width: 110px;">
                     <option value="">All Status</option>
                     <option value="present">Present</option>
                     <option value="absent">Absent</option>
@@ -87,10 +87,11 @@
 
         <div class="col-md-6">
             <div class="table-responsive" style="max-height: 355px; overflow-y: auto;">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <!-- Make filter header sticky -->
+                <div class="card-header d-flex justify-content-between align-items-center sticky-top bg-white" style="top: 0; z-index: 3;">
                     <h6 class="mb-0" id="absentEmployeesTitle">Absent Employees</h6>
                     <input type="text" id="filterName" placeholder="Search by name" class="form-control form-control-sm" style="width: 250px;">
-
+        
                     <select id="filterDepartment" class="form-control form-control-sm" style="width: 150px;">
                         <option value="">All Departments</option>
                         {% for dept in departments %}
@@ -100,8 +101,9 @@
                     
                     <input type="date" id="absentDate" class="form-control form-control-sm" style="width: 150px;">
                 </div>
-                <table class="table table-striped table-hover">
-                    <thead class="table-light position-sticky top-0">
+        
+                <table class="table table-striped table-hover mb-0">
+                    <thead class="table-light position-sticky top-0" style="z-index: 2;">
                         <tr>
                             <th>#</th>
                             <th>Employee Name</th>
@@ -126,6 +128,7 @@
                 </table>
             </div>
         </div>
+        
         
     </div>
     <div class="row mt-3" style="height: 400px;">
@@ -337,7 +340,7 @@
                                 <td>${attn.date}</td>
                                 <td>${attn.in_time}</td>
                                 <td>${attn.out_time || ''}</td>
-                                <td>${attn.remote ? '<i class="fa-solid text-success fa-check ms-3"></i>' : '<i class="fa-solid text-danger fa-xmark ms-3"></i>'}</td>
+                                <td>${attn.remote ? '<a href="/leave/visitApplications"><i class="fa-solid text-success fa-check ms-3"></i></a>' : '<i class="fa-solid text-danger fa-xmark ms-3"></i>'}</td>
                                 <td>${attn.reason || ''}</td>
                                 <td>${attn.location || ''}</td>
                                 <td><span class="badge bg-${attn.status === 'present' ? 'success' : attn.status === 'leave' ? 'warning' : 'danger'}">${attn.status}</span></td>
@@ -345,7 +348,7 @@
                         `;
                         tableBody.innerHTML += row;
                     });
-                    document.getElementById('quickViewTitle').innerHTML = `Quick View (${data.attendances.length})`;
+                    document.getElementById('quickViewTitle').innerHTML = `Overall (${data.attendances.length})`;
                 } else {
                     tableBody.innerHTML = `<tr><td colspan="11" class="text-center">No Attendance Records found.</td></tr>`;
                 }

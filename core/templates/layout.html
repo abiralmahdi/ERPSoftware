@@ -12,7 +12,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <style>
+    <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+
+<style>
         .nav-item{
             margin-right: 30px;
         }
@@ -46,16 +49,29 @@
                     <ul class="dropdown-menu">
                       <li><a class="dropdown-item" href="/attendance/attendanceDashboard">Dashboard</a></li>
                       <li><a class="dropdown-item" href="/attendance/attendanceList">Attendance List</a></li>
+                      <li><a class="dropdown-item" href="/attendance/remoteAttendance">Remote Attendance</a></li>
                     </ul>
                   </li>
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle {% if 'leave' in request.path %}fw-bold{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  {% if globalConfig.leaveNotification or globalConfig.visitNotification %}
+                  <i class="position-absolute top-1 start-100 translate-middle fa-solid fa-bell text-danger"></i>
+                  {% endif %}
                   Leave
                 </a>
                 <ul class="dropdown-menu">
                   <li><a class="dropdown-item" href="/leave/dashboard">Dashboard</a></li>
-                  <li><a class="dropdown-item" href="/leave/leaveApplications">Leave Applications</a></li>
-                  <li><a class="dropdown-item" href="/leave/visitApplications">Visit Applications</a></li>
+                  <li>
+                    <a class="dropdown-item {% if globalConfig.leaveNotification %}text-danger{% endif %}" href="/leave/leaveApplications">
+
+                      Leave Applications
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item {% if globalConfig.visitNotification %}text-danger{% endif %}" href="/leave/visitApplications">
+                      Visit Applications
+                    </a>
+                  </li>
                   <li><a class="dropdown-item" href="/leave/leaveAdjustment">Leave Adjustment</a></li>
                   <!-- <li><a class="dropdown-item" href="/leave/leaveEncashment">Leave Encashment Process</a></li> -->
                 </ul>
