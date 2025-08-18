@@ -8,4 +8,5 @@ class GlobalConfig(models.Model):
     otherLeave = models.IntegerField()
     leaveNotification = models.BooleanField(default=False)
     visitNotification = models.BooleanField(default=False)
+    officeStartTime = models.TimeField()
     

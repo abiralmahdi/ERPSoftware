@@ -133,7 +133,7 @@ def getEmployee(request):
         return render(request, 'employeeList.html', context)
     
 
-
+from datetime import date, timedelta
 def indivEmployee(request, employeeID):
     globalConfig = GlobalConfig.objects.all().first()
     employee = get_object_or_404(Employee, id=employeeID)
@@ -145,6 +145,9 @@ def indivEmployee(request, employeeID):
     leave = LeaveApplications.objects.filter(employee=employee)
     attendance = Attendance.objects.filter(employee=employee)
     visits = VisitApplications.objects.filter(employee=employee)
+    today = date.today()
+    today_minus_30 = today - timedelta(days=30)
+    today_minus_365 = today - timedelta(days=365)
     
 
     # Example chart data (replace with actual data)
@@ -164,9 +167,11 @@ def indivEmployee(request, employeeID):
         'leave':leave,
         'attendances':attendance.order_by('-date'),
         'visits':visits,
-        'globalConfig':globalConfig
+        'globalConfig':globalConfig,
+        'today':today,
+        'today_minus_30':today_minus_30,
+        'today_minus_365':today_minus_365
     })
-
 
 
 def viewAwards(request):

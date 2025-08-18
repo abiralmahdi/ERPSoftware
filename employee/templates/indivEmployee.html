@@ -108,7 +108,6 @@
                 <div class="col-sm-8 ms-5">
                     <select name="status" class="form-control">
                         <option value="Active" {% if employee.status == "Active" %}selected{% endif %}>Active</option>
-                        <option value="Leave" {% if employee.status == "Leave" %}selected{% endif %}>Leave</option>
                         <option value="Inactive" {% if employee.status == "Inactive" %}selected{% endif %}>Inactive</option>
                     </select>
                 </div>
@@ -641,8 +640,11 @@
                         </td>
                         <td>{{attn.reason}}</td>
                         <td>{{attn.location}}</td>
-                        <td>
+                        <td>{% if attn.inTime <= globalConfig.officeStartTime or not attn.inTime %}
                             <span class="badge bg-{% if attn.status == 'present' %}success{% elif attn.status == 'leave' %}warning{% else %}danger{% endif %}">{{attn.status}}</span>
+                            {% else %}
+                            <span class="badge text-dark" style="background-color: rgb(164, 242, 156) !important;">late</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}
@@ -657,60 +659,175 @@
     
 
 
-    <!-- Charts -->
-    <div class="row mt-5">
-        <div class="col-md-6">
-            <h5>Benefits Summary</h5>
-            <canvas id="benefitsChart"></canvas>
+   <!-- Charts Section -->
+   <div class="row mt-4 g-4">
+  
+    <!-- Attendance Pie Chart Card -->
+    <div class="col-lg-6 col-md-12">
+      <div class="card shadow-sm h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">Attendance Summary</h5>
+          <div class="d-flex gap-2">
+            <input type="date" id="startDate" class="form-control form-control-sm" 
+                   value="{{ today_minus_30|date:'Y-m-d' }}"
+                   max="{{ today|date:'Y-m-d' }}">
+            <input type="date" id="endDate" class="form-control form-control-sm" 
+                   value="{{ today|date:'Y-m-d' }}"
+                   max="{{ today|date:'Y-m-d' }}">
+            <button class="btn btn-sm btn-dark" id="refreshChart" onclick="loadChart()">Apply</button>
+          </div>
         </div>
-        <div class="col-md-6">
-            <h5>Placeholder Chart</h5>
-            <canvas id="secondChart"></canvas>
+        <div class="card-body d-flex justify-content-center align-items-center" style="height: 400px; max-height: 400px;">
+          <canvas id="attendanceChart" width="100%" height="100%"></canvas>
         </div>
+      </div>
     </div>
+  
+    <!-- Monthly Attendance / Second Chart Card -->
+    <div class="col-lg-6 col-md-12">
+      <div class="card shadow-sm h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">Monthly Attendance</h5>
+          <div class="d-flex gap-2">
+            <input type="date" id="startDate2" class="form-control form-control-sm" 
+                   value="{{ today_minus_365|date:'Y-m-d' }}"
+                   max="{{ today|date:'Y-m-d' }}">
+            <input type="date" id="endDate2" class="form-control form-control-sm" 
+                   value="{{ today|date:'Y-m-d' }}"
+                   max="{{ today|date:'Y-m-d' }}">
+            <button class="btn btn-sm btn-dark" id="refreshChart2">Apply</button>
+          </div>
+        </div>
+        <div class="card-body d-flex justify-content-center align-items-center" style="height: 400px; max-height: 400px; width: 100%">
+          <canvas id="secondChart"></canvas>
+        </div>
+      </div>
+    </div>
+  
 </div>
 
-<script>
-    const benefitCtx = document.getElementById('benefitsChart').getContext('2d');
-    const benefitChart = new Chart(benefitCtx, {
-        type: 'bar',
-        data: {
-            labels: {{ chart_data.labels|safe }},
-            datasets: [{
-                label: 'Count',
-                data: {{ chart_data.values|safe }},
-                backgroundColor: ['#6c757d', '#198754', '#0d6efd', '#ffc107']
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false },
-                title: {
-                    display: true,
-                    text: 'Benefits Overview'
-                }
-            }
-        }
-    });
+  
+</div>
 
-    const secondCtx = document.getElementById('secondChart').getContext('2d');
-    const secondChart = new Chart(secondCtx, {
-        type: 'line',
-        data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
-            datasets: [{
-                label: 'Performance',
-                data: [10, 15, 12, 18, 14],
-                fill: false,
-                borderColor: '#0d6efd',
-                tension: 0.1
-            }]
-        },
-        options: {
-            responsive: true
+
+
+
+<script>
+    let chart;
+
+    function loadChart() {
+        const startDate = document.getElementById("startDate").value;
+        const endDate = document.getElementById("endDate").value;
+        const url = `/attendance/attendance_pie_chart/{{ employee.id }}?start_date=${startDate}&end_date=${endDate}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (chart) {
+                    chart.destroy(); // refresh
+                }
+                const ctx = document.getElementById("attendanceChart").getContext("2d");
+                chart = new Chart(ctx, {
+                    type: "pie",
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: `Attendance of ${data.employee}`,
+                            data: data.counts,
+                            backgroundColor: [
+                                "green", // Present
+                                "#63f75e", // Late
+                                "red", // Absent
+                                "yellow"  // Leave
+                            ],
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: "bottom" },
+                            title: { display: true, text: `Attendance Report for ${data.employee}` }
+                        }
+                    }
+                });
+            });
+    }
+
+    // Load chart initially with no dates (default current month)
+    window.onload = loadChart;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('secondChart').getContext('2d');
+    
+        // Fetch data from Django view
+        async function loadAttendanceChart() {
+            const startDate = document.getElementById('startDate2').value;
+            const endDate = document.getElementById('endDate2').value;
+    
+            const response = await fetch(`/attendance/employee_monthly_attendance/{{ employee.id }}?start_date=${startDate}&end_date=${endDate}`);
+            const data = await response.json();
+    
+            const chartData = {
+                labels: data.months,
+                datasets: [
+                    {
+                        label: 'Present',
+                        data: data.present,
+                        backgroundColor: 'green'
+                    },
+                    { label: 'Late', data: data.late, backgroundColor: '#63f75e' },
+                    {
+                        label: 'Leave',
+                        data: data.leave,
+                        backgroundColor: 'yellow'
+                    },
+                    {
+                        label: 'Absent',
+                        data: data.absent,
+                        backgroundColor: 'red'
+                    }
+                ]
+            };
+    
+            const config = {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true
+                        }
+                    }
+                },
+            };
+    
+            if(window.attendanceChartInstance) {
+                window.attendanceChartInstance.destroy();
+            }
+    
+            window.attendanceChartInstance = new Chart(ctx, config);
         }
+    
+        loadAttendanceChart();
+    
+        // Reload chart when date changes
+        document.getElementById('refreshChart2').addEventListener('click', loadAttendanceChart);
     });
-</script>
+    </script>
+
 
 {% endblock %}

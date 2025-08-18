@@ -3,10 +3,10 @@ import django
 from datetime import date, timedelta
 
 # Setup Django environment
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "HRManagementSoftware.settings")  # change to your project
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "HRManagementSoftware.settings")
 django.setup()
 
-from django.contrib.auth.models import User  # noqa: F401 (kept if you need it elsewhere)
+from django.contrib.auth.models import User  # noqa: F401
 from attendance.models import Employee, Attendance
 from leave.models import LeaveApplications, VisitApplications
 from zk import ZK
@@ -16,7 +16,7 @@ DEVICE_IPS = ["192.168.1.201", "103.29.60.50"]
 DEVICE_PORT = 4370
 
 today = date.today()
-three_months_ago = today - timedelta(days=90)  # last 3 months
+three_months_ago = today - timedelta(days=365)  # last ~1 year
 
 all_attendances = []  # store logs from all devices
 
@@ -24,19 +24,22 @@ all_attendances = []  # store logs from all devices
 for ip in DEVICE_IPS:
     print(f"🔌 Connecting to ZKTeco device at {ip}...")
     zk = ZK(ip, port=DEVICE_PORT, timeout=60)
+    conn = None
     try:
         conn = zk.connect()
         conn.disable_device()
-
         device_attendances = conn.get_attendance()
         print(f"✅ Logs fetched from {ip}: {len(device_attendances)}")
-
         all_attendances.extend(device_attendances)
-
-        conn.enable_device()
-        conn.disconnect()
     except Exception as e:
         print(f"❌ Could not connect to device {ip}: {e}")
+    finally:
+        try:
+            if conn:
+                conn.enable_device()
+                conn.disconnect()
+        except Exception:
+            pass
 
 print(f"\n📊 Total logs combined from devices: {len(all_attendances)}")
 
@@ -50,15 +53,14 @@ for att in all_attendances:
 # ---------- Process attendance for each employee and each day ----------
 employees = Employee.objects.all()
 for emp in employees:
-    # user_id from device is typically str or int; normalize both sides with str()
+    # Normalize keys: some SDKs return int user_id
     emp_attendance = attendance_dict.get(str(emp.fingerPrintID), {}) or attendance_dict.get(emp.fingerPrintID, {})
 
     for n in range(91):
         current_date = three_months_ago + timedelta(days=n)
         punches = emp_attendance.get(current_date, [])
 
-        # Pre-checks for leave/visit approvals (only when needed)
-        # Leave must be approved by dept, HR, and final
+        # Pre-checks: Leave must be approved by dept, HR, final
         leave_exists = LeaveApplications.objects.filter(
             employee=emp,
             startDate__lte=current_date,
@@ -68,7 +70,7 @@ for emp in employees:
             finalApproval='approved'
         ).exists()
 
-        # Visit must be approved by dept, HR, and final
+        # Visit must be approved by dept, HR, final
         visit_exists = VisitApplications.objects.filter(
             employee=emp,
             startDate__lte=current_date,
@@ -83,7 +85,7 @@ for emp in employees:
             in_time = min(p.time() for p in punches)
             out_time = max(p.time() for p in punches)
             status = "present"
-            remote = True if visit_exists else False  # mark remote when on approved visit even if there are punches
+            remote = True if visit_exists else False  # mark remote when on approved visit even with punches
         else:
             in_time = None
             out_time = None
@@ -97,25 +99,32 @@ for emp in employees:
                 status = "absent"
                 remote = False
 
-        # Upsert Attendance
-        attendance_obj, created = Attendance.objects.get_or_create(
-            employee=emp,
-            date=current_date,
-            defaults={
-                'inTime': in_time,
-                'outTime': out_time,
-                'status': status,
-                'remote': remote,
-            }
-        )
+        # ---------- Safe upsert with duplicate cleanup ----------
+        qs = Attendance.objects.filter(employee=emp, date=current_date).order_by("id")
+        if qs.exists():
+            att_obj = qs.first()
+            # If duplicates exist, delete extras
+            if qs.count() > 1:
+                qs.exclude(id=att_obj.id).delete()
+                print(f"⚠️ Cleaned duplicates for {emp.user.get_full_name()} on {current_date}")
 
-        if not created:
-            # Only overwrite with new information; keep previous times if we still have None
-            attendance_obj.inTime = in_time if in_time else attendance_obj.inTime
-            attendance_obj.outTime = out_time if out_time else attendance_obj.outTime
-            attendance_obj.status = status
-            attendance_obj.remote = remote
-            attendance_obj.save()
+            # Update the single kept record
+            if in_time and (not att_obj.inTime or in_time < att_obj.inTime):
+                att_obj.inTime = in_time
+            if out_time and (not att_obj.outTime or out_time > att_obj.outTime):
+                att_obj.outTime = out_time
+            att_obj.status = status
+            att_obj.remote = remote
+            att_obj.save()
+        else:
+            Attendance.objects.create(
+                employee=emp,
+                date=current_date,
+                inTime=in_time,
+                outTime=out_time,
+                status=status,
+                remote=remote,
+            )
 
     print(f"✅ Processed attendance for {emp.user.get_full_name()}")
 

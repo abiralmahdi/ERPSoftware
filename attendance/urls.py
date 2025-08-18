@@ -10,4 +10,6 @@ urlpatterns = [
     path("get-absentees/", views.get_absentees, name="get_absentees"),
     path("attendance-data/", views.attendance_chart_data, name="attendance_chart_data"),
     path("get-quickview/", views.get_quickview, name="get_quickview"),
+    path("attendance_pie_chart/<str:employee_id>", views.attendance_pie_chart, name="attendance_pie_chart"),
+    path("employee_monthly_attendance/<str:employee_id>", views.employee_monthly_attendance, name="employee_monthly_attendance"),
 ]

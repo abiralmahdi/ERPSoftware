@@ -19,5 +19,8 @@ class Attendance(models.Model):
     latitude = models.CharField(max_length=100, null=True, blank=True, default="")
     photo = models.ImageField(upload_to="attendance_photos/", null=True, blank=True)
 
+    class Meta:
+        unique_together = ('employee', 'date')  # or UniqueConstraint in Django 2.2+
+
 
     

@@ -71,8 +71,11 @@
                         </td>
                         <td>{{attn.reason}}</td>
                         <td>{{attn.location}}</td>
-                        <td>
+                        <td>{% if attn.inTime <= globalConfig.officeStartTime or not attn.inTime %}
                             <span class="badge bg-{% if attn.status == 'present' %}success{% elif attn.status == 'leave' %}warning{% else %}danger{% endif %}">{{attn.status}}</span>
+                            {% else %}
+                            <span class="badge text-dark" style="background-color: rgb(164, 242, 156) !important;">late</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}
@@ -237,74 +240,72 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const startInput = document.getElementById("startDate");
-            const endInput = document.getElementById("endDate");
-        
-            // Restrict future dates
-            const today = new Date();
-            const todayStr = today.toISOString().split("T")[0];
-            startInput.max = todayStr;
-            endInput.max = todayStr;
-        
-            // Calculate last 7 days
-            const last7Date = new Date();
-            last7Date.setDate(today.getDate() - 30); // include today
-            const last7Str = last7Date.toISOString().split("T")[0];
-        
-            // Set input values to last 7 days
-            startInput.value = last7Str;
-            endInput.value = todayStr;
-        
-            // Chart initialization
-            const ctx = document.getElementById("attendanceChart").getContext("2d");
-            let attendanceChart = new Chart(ctx, {
-                type: "bar",
-                data: {
-                    labels: [],
-                    datasets: [
-                        { label: "Present", data: [], backgroundColor: "#28a745", stack: "attendance" },
-                        { label: "Absent", data: [], backgroundColor: "#dc3545", stack: "attendance" },
-                        { label: "Leave", data: [], backgroundColor: "#ffc107", stack: "attendance" }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: "top" } },
-                    scales: {
-                        x: { stacked: true },
-                        y: { stacked: true, beginAtZero: true }
-                    }
-                }
-            });
-        
-            function fetchAttendanceData(start, end) {
-                if (!start || !end) return;
-        
-                fetch(`/attendance/attendance-data/?start=${start}&end=${end}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        attendanceChart.data.labels = data.labels;
-                        attendanceChart.data.datasets[0].data = data.present;
-                        attendanceChart.data.datasets[1].data = data.absent;
-                        attendanceChart.data.datasets[2].data = data.leave;
-                        attendanceChart.update();
-                    })
-                    .catch(err => console.error("Error fetching attendance data:", err));
+    const startInput = document.getElementById("startDate");
+    const endInput = document.getElementById("endDate");
+    const officeStartTime = "{{ globalConfig.officeStartTime|date:'H:i' }}"; // HH:MM
+
+    const today = new Date();
+    const todayStr = today.toISOString().split("T")[0];
+    startInput.max = todayStr;
+    endInput.max = todayStr;
+
+    const last30 = new Date();
+    last30.setDate(today.getDate() - 30);
+    const last30Str = last30.toISOString().split("T")[0];
+
+    startInput.value = last30Str;
+    endInput.value = todayStr;
+
+    const ctx = document.getElementById("attendanceChart").getContext("2d");
+    let attendanceChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: [],
+            datasets: [
+                { label: "Present", data: [], backgroundColor: "#28a745", stack: "attendance" },
+                { label: "Late", data: [], backgroundColor: "#20c997", stack: "attendance" },
+                { label: "Absent", data: [], backgroundColor: "#dc3545", stack: "attendance" },
+                { label: "Leave", data: [], backgroundColor: "#ffc107", stack: "attendance" }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: "top" } },
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true, beginAtZero: true }
             }
-        
-            // Fetch when both dates are selected
-            startInput.addEventListener("change", () => {
-                if (startInput.value && endInput.value) fetchAttendanceData(startInput.value, endInput.value);
-            });
-        
-            endInput.addEventListener("change", () => {
-                if (startInput.value && endInput.value) fetchAttendanceData(startInput.value, endInput.value);
-            });
-        
-            // Auto-load last 7 days data on page load
-            fetchAttendanceData(last7Str, todayStr);
-        });
+        }
+    });
+
+    function fetchAttendanceData(start, end) {
+        if (!start || !end) return;
+
+        fetch(`/attendance/attendance-data/?start=${start}&end=${end}&officeStartTime=${officeStartTime}`)
+            .then(res => res.json())
+            .then(data => {
+                attendanceChart.data.labels = data.labels;
+                attendanceChart.data.datasets[0].data = data.present.map((p, i) => p - data.late[i]); // Present without late
+                attendanceChart.data.datasets[1].data = data.late; // Late
+                attendanceChart.data.datasets[2].data = data.absent;
+                attendanceChart.data.datasets[3].data = data.leave;
+                attendanceChart.update();
+            })
+            .catch(err => console.error("Error fetching attendance data:", err));
+    }
+
+    startInput.addEventListener("change", () => {
+        if (startInput.value && endInput.value) fetchAttendanceData(startInput.value, endInput.value);
+    });
+
+    endInput.addEventListener("change", () => {
+        if (startInput.value && endInput.value) fetchAttendanceData(startInput.value, endInput.value);
+    });
+
+    // Load initial data
+    fetchAttendanceData(last30Str, todayStr);
+});
         </script>
         
         <script>
@@ -315,7 +316,7 @@
     const startDateInput = document.getElementById("quickViewStartDate");
     const endDateInput = document.getElementById("quickViewEndDate");
     const tableBody = document.querySelector("#quickViewTableBody");
-
+    const officeStartTime = "{{ officeStartTime }}";
     function loadQuickView() {
         const params = new URLSearchParams({
             name: nameInput.value,
@@ -338,15 +339,25 @@
                                 <td>${attn.designation}</td>
                                 <td>${attn.department}</td>
                                 <td>${attn.date}</td>
-                                <td>${attn.in_time}</td>
+                                <td>${attn.in_time || ''}</td>
                                 <td>${attn.out_time || ''}</td>
-                                <td>${attn.remote ? '<a href="/leave/visitApplications"><i class="fa-solid text-success fa-check ms-3"></i></a>' : '<i class="fa-solid text-danger fa-xmark ms-3"></i>'}</td>
+                                <td>${attn.remote 
+                                    ? '<a href="/leave/visitApplications"><i class="fa-solid text-success fa-check ms-3"></i></a>'
+                                    : '<i class="fa-solid text-danger fa-xmark ms-3"></i>'
+                                }</td>
                                 <td>${attn.reason || ''}</td>
                                 <td>${attn.location || ''}</td>
-                                <td><span class="badge bg-${attn.status === 'present' ? 'success' : attn.status === 'leave' ? 'warning' : 'danger'}">${attn.status}</span></td>
+                                <td>
+                                    ${(!attn.in_time || attn.in_time <= officeStartTime)
+                                        ? `<span class="badge bg-${attn.status === 'present' ? 'success' : attn.status === 'leave' ? 'warning' : 'danger'}">${attn.status}</span>`
+                                        : `<span class="badge text-dark" style="background-color: rgb(164, 242, 156) !important;">late</span>`
+                                    }
+                                </td>
                             </tr>
-                        `;
-                        tableBody.innerHTML += row;
+                            `;
+                            tableBody.innerHTML += row;
+                            console.log(attn.in_time)
+                            console.log(officeStartTime)
                     });
                     document.getElementById('quickViewTitle').innerHTML = `Overall (${data.attendances.length})`;
                 } else {
