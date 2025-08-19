@@ -309,7 +309,7 @@ def leaveDashboard(request):
     monthly_data = {month: {lt: 0 for lt in leave_types} for month in range(1, 13)}
 
     leaves = (LeaveApplications.objects
-              .filter(startDate__year=year)
+              .filter(startDate__year=year, finalApproval=True)
               .annotate(month=ExtractMonth('startDate'))
               .values('month', 'leaveType')
               .annotate(total=Count('id')))

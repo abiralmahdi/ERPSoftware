@@ -50,6 +50,7 @@
                       <li><a class="dropdown-item" href="/attendance/attendanceDashboard">Dashboard</a></li>
                       <li><a class="dropdown-item" href="/attendance/attendanceList">Attendance List</a></li>
                       <li><a class="dropdown-item" href="/attendance/remoteAttendance">Remote Attendance</a></li>
+                      <li><a class="dropdown-item" href="/attendance/calendar">Calendar and Holidays</a></li>
                     </ul>
                   </li>
               <li class="nav-item dropdown">
@@ -110,7 +111,11 @@
               </li> -->
             </ul>
             <form class="d-flex" role="search">
+              {% if request.user.is_anonymous %}
               <a class="btn btn-dark fw-bold" href="/employees/login">Login</a>
+              {% else %}
+              <a class="btn btn-dark fw-bold" href="/employees/logout">Logout</a>
+              {% endif %}
             </form>
           </div>
         </div>

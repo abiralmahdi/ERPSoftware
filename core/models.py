@@ -9,4 +9,5 @@ class GlobalConfig(models.Model):
     leaveNotification = models.BooleanField(default=False)
     visitNotification = models.BooleanField(default=False)
     officeStartTime = models.TimeField()
+    weekend = models.CharField(max_length=100, default='Friday')
     

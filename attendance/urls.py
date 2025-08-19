@@ -12,4 +12,6 @@ urlpatterns = [
     path("get-quickview/", views.get_quickview, name="get_quickview"),
     path("attendance_pie_chart/<str:employee_id>", views.attendance_pie_chart, name="attendance_pie_chart"),
     path("employee_monthly_attendance/<str:employee_id>", views.employee_monthly_attendance, name="employee_monthly_attendance"),
+    path("calendar", views.calendar_view, name="calendar_view"),
+    path("calendar/add_holiday/", views.add_holiday, name="add_holiday"),
 ]

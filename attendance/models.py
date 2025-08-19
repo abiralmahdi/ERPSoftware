@@ -19,8 +19,10 @@ class Attendance(models.Model):
     latitude = models.CharField(max_length=100, null=True, blank=True, default="")
     photo = models.ImageField(upload_to="attendance_photos/", null=True, blank=True)
 
-    class Meta:
-        unique_together = ('employee', 'date')  # or UniqueConstraint in Django 2.2+
 
+class Holiday(models.Model):
+    date = models.DateField(unique=True)
+    name = models.CharField(max_length=100)
 
-    
+    def __str__(self):
+        return f"{self.date} - {self.name}"

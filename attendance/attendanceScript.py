@@ -16,7 +16,7 @@ DEVICE_IPS = ["192.168.1.201", "103.29.60.50"]
 DEVICE_PORT = 4370
 
 today = date.today()
-three_months_ago = today - timedelta(days=365)  # last ~1 year
+three_months_ago = today - timedelta(days=90)  # last ~1 year
 
 all_attendances = []  # store logs from all devices
 
@@ -51,6 +51,7 @@ for att in all_attendances:
         attendance_dict.setdefault(att.user_id, {}).setdefault(att_date, []).append(att.timestamp)
 
 # ---------- Process attendance for each employee and each day ----------
+Attendance.objects.all().delete()
 employees = Employee.objects.all()
 for emp in employees:
     # Normalize keys: some SDKs return int user_id

@@ -66,13 +66,15 @@ def attendanceDashboard(request):
     attendanceList = Attendance.objects.all().order_by('-date')
     absentEmployees = Employee.objects.exclude(id__in=attendanceList.filter(date=datetime.today()))
     office_start_time = globalConfig.officeStartTime.strftime("%H:%M")
+    weekend = globalConfig.weekend
     context = {
         'attendances': attendanceList,
         'departments': Department.objects.all(),
         'designations': Designation.objects.all(),
         'absentees':absentEmployees,
         'globalConfig':globalConfig,
-        'officeStartTime':office_start_time
+        'officeStartTime':office_start_time,
+        'weekend':weekend
     }
     return render(request, 'attendanceDashboard.html', context)
 
@@ -188,15 +190,13 @@ def get_absentees(request):
     return JsonResponse({"absentees": absentees_list})
 
 
-
-
-from datetime import timedelta
-from django.db.models import Count
-
+from django.http import JsonResponse
+from datetime import datetime, timedelta
+from django.utils.dateparse import parse_date
 def attendance_chart_data(request):
     start_date = request.GET.get("start")
     end_date = request.GET.get("end")
-    office_time_str = request.GET.get("officeStartTime")  # pass from template, e.g., "09:00"
+    office_time_str = request.GET.get("officeStartTime")  # e.g., "09:00"
 
     try:
         start_date = parse_date(start_date)
@@ -208,9 +208,20 @@ def attendance_chart_data(request):
     if not start_date or not end_date:
         return JsonResponse({"error": "Missing date parameters"}, status=400)
 
+    global_config = GlobalConfig.objects.first()
+    weekend_day = getattr(global_config, 'weekend', 'Friday')  # default 'Friday'
+    work_hours_per_day = 8
+
     qs = Attendance.objects.filter(date__range=[start_date, end_date])
+    holidays = set(Holiday.objects.filter(date__range=[start_date, end_date]).values_list('date', flat=True))
+
+    # get all employees (to calculate working hours & absentees)
+    all_employees = Attendance.objects.values_list('employee', flat=True).distinct()
+    total_employees = len(all_employees)
+
     date_list = []
-    present_data, absent_data, leave_data, late_data = [], [], [], []
+    present_data, absent_data, leave_data, late_data, weekend_data = [], [], [], [], []
+    total_late_hours_list, total_absent_hours_list, total_working_hours_list = [], [], []
 
     current_date = start_date
     while current_date <= end_date:
@@ -218,12 +229,18 @@ def attendance_chart_data(request):
         date_list.append(current_date.strftime("%Y-%m-%d"))
 
         present_count = 0
+        weekend_count = 0
         absent_count = 0
         leave_count = 0
         late_count = 0
+        total_late_hours = 0
+        total_absent_hours = 0
+
+        # Check weekend / holiday
+        is_weekend = current_date.strftime("%A") == weekend_day
+        is_holiday = current_date in holidays
 
         for attn in daily_records:
-            # Check leave applications
             leave_app = LeaveApplications.objects.filter(
                 employee=attn.employee,
                 startDate__lte=current_date,
@@ -233,33 +250,58 @@ def attendance_chart_data(request):
 
             if leave_app:
                 leave_count += 1
-            elif attn.inTime and attn.inTime > office_time:
-                late_count += 1
-                present_count += 1  # late still counts as present
-            elif attn.inTime:
-                present_count += 1
-            else:
-                absent_count += 1
+            elif not is_weekend and not is_holiday:
+                if attn.inTime and attn.inTime > office_time:
+                    late_count += 1
+                    present_count += 1
+                    late_delta = datetime.combine(datetime.min, attn.inTime) - datetime.combine(datetime.min, office_time)
+                    total_late_hours += late_delta.total_seconds() / 3600
+                elif attn.inTime:
+                    present_count += 1
+                else:
+                    absent_count += 1
+                    total_absent_hours += work_hours_per_day
+            elif is_weekend or is_holiday:
+                if attn.inTime:
+                    weekend_count += 1
 
-        # Count absent if no attendance record exists
+        # Count absent for employees without attendance record
         employees_with_attendance = [a.employee.id for a in daily_records]
-        all_employees = Attendance.objects.values_list('employee', flat=True).distinct()
-        absent_count += len(set(all_employees) - set(employees_with_attendance))
+        for emp_id in set(all_employees) - set(employees_with_attendance):
+            if not is_weekend and not is_holiday:
+                absent_count += 1
+                total_absent_hours += work_hours_per_day
 
+        # calculate working hours
+        if not is_weekend and not is_holiday:
+            total_working_hours = total_employees * work_hours_per_day
+        else:
+            total_working_hours = 0
+
+        # append results
         present_data.append(present_count)
+        weekend_data.append(weekend_count)
         absent_data.append(absent_count)
         leave_data.append(leave_count)
         late_data.append(late_count)
+        total_late_hours_list.append(round(total_late_hours, 2))
+        total_absent_hours_list.append(round(total_absent_hours, 2))
+        total_working_hours_list.append(total_working_hours)
 
         current_date += timedelta(days=1)
 
     return JsonResponse({
         "labels": date_list,
         "present": present_data,
+        "weekend": weekend_data,
         "absent": absent_data,
         "leave": leave_data,
-        "late": late_data
+        "late": late_data,
+        "total_late_hours": total_late_hours_list,
+        "total_absent_hours": total_absent_hours_list,
+        "total_working_hours": total_working_hours_list,
     })
+
 
 
 def remoteAttendance(request):
@@ -363,36 +405,40 @@ def outTime(request, attendanceID):
         attendance.save()
     return redirect("/attendance/remoteAttendance")  # adjust redirect
 
-
-
 from django.http import JsonResponse
-from datetime import date, timedelta
-
+from datetime import date, datetime, timedelta, time
 def attendance_pie_chart(request, employee_id):
     employee = Employee.objects.get(id=int(employee_id))
 
-    # Get start & end dates from query params
     start = request.GET.get("start_date")
     end = request.GET.get("end_date")
 
-    if not start or not end:  # default: last 30 days
+    if not start or not end:  # default last 30 days
         end_date = date.today()
         start_date = end_date - timedelta(days=30)
     else:
         start_date = datetime.strptime(start, "%Y-%m-%d").date()
         end_date = datetime.strptime(end, "%Y-%m-%d").date()
 
-    # Office start time from GlobalConfig
     global_config = GlobalConfig.objects.first()
-    office_start = datetime.strptime(global_config.officeStartTime.strftime("%H:%M"), "%H:%M").time()
+    office_start = global_config.officeStartTime  # TimeField
+    work_hours_per_day = 8  # assume 8-hour workday
+    weekend_day = getattr(global_config, 'weekend', 'Friday')  # default 'Friday'
 
-    # Generate all days in range
+    holidays = set(Holiday.objects.filter(date__range=(start_date, end_date)).values_list('date', flat=True))
+
     all_days = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
 
-    present_count, absent_count, leave_count, late_count = 0, 0, 0, 0
+    present_count = 0
+    late_count = 0
+    absent_count = 0
+    leave_count = 0
+    weekend_present_count = 0
+    total_late_hours = 0
+    total_absent_hours = 0
+    total_working_days = 0
 
     for day in all_days:
-        # Check leave
         leave_exists = LeaveApplications.objects.filter(
             employee=employee,
             finalApproval='approved',
@@ -403,33 +449,53 @@ def attendance_pie_chart(request, employee_id):
             leave_count += 1
             continue
 
-        # Check attendance
+        day_name = day.strftime("%A")
+        is_weekend = (day_name == weekend_day)
+        is_holiday = day in holidays
+
         attn = Attendance.objects.filter(employee=employee, date=day).first()
         if attn:
-            if attn.inTime and attn.inTime > office_start:
+            if attn.inTime and attn.inTime > office_start and not (is_weekend or is_holiday):
                 late_count += 1
-                present_count += 1  # late is also counted as present
-            elif attn.status == "present":
                 present_count += 1
+                total_working_days += 1
+                late_delta = datetime.combine(date.min, attn.inTime) - datetime.combine(date.min, office_start)
+                total_late_hours += late_delta.total_seconds() / 3600
+            elif attn.status == "present" and not (is_weekend or is_holiday):
+                present_count += 1
+                total_working_days += 1
+            elif attn.status == "present" and is_weekend:
+                weekend_present_count += 1
             elif attn.status == "leave":
                 leave_count += 1
-            else:
+            elif not (is_weekend or is_holiday):
                 absent_count += 1
+                total_absent_hours += work_hours_per_day
         else:
-            absent_count += 1
+            if not (is_weekend or is_holiday):
+                absent_count += 1
+                total_absent_hours += work_hours_per_day
+
+    total_working_hours = total_working_days * work_hours_per_day
 
     data = {
-        "labels": ["Present", "Late", "Absent", "Leave"],
-        "counts": [present_count - late_count, late_count, absent_count, leave_count],
+        "labels": ["Present", "Weekend Present", "Late", "Absent", "Leave"],
+        "counts": [present_count - late_count, weekend_present_count, late_count, absent_count, leave_count],
         "employee": employee.user.get_full_name(),
+        "total_late_hours": round(total_late_hours, 2),
+        "total_absent_hours": round(total_absent_hours, 2),
+        "total_working_hours": total_working_hours,
     }
+
     return JsonResponse(data)
 
 
-from django.utils.timezone import now
-from datetime import datetime
-from collections import defaultdict
 
+
+from django.utils.timezone import now
+from datetime import datetime, timedelta
+from collections import defaultdict
+import calendar
 def employee_monthly_attendance(request, employee_id):
     employee = Employee.objects.get(id=int(employee_id))
     start_date = request.GET.get('start_date')
@@ -446,20 +512,19 @@ def employee_monthly_attendance(request, employee_id):
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
 
     global_config = GlobalConfig.objects.first()
-    office_start = datetime.strptime(global_config.officeStartTime.strftime("%H:%M"), "%H:%M").time()
+    office_start = global_config.officeStartTime
+    weekend_day = getattr(global_config, 'weekend', 'Friday')
 
-    monthly_data = defaultdict(lambda: {'present':0, 'late':0, 'leave':0, 'absent':0})
+    monthly_data = defaultdict(lambda: {'present':0, 'weekend_present':0, 'late':0, 'leave':0, 'absent':0})
 
-    # Initialize months
     current = start_date.replace(day=1)
     while current <= end_date:
-        monthly_data[current.strftime("%Y-%m")] = {'present':0, 'late':0, 'leave':0, 'absent':0}
+        monthly_data[current.strftime("%Y-%m")] = {'present':0, 'weekend_present':0, 'late':0, 'leave':0, 'absent':0}
         if current.month == 12:
             current = current.replace(year=current.year+1, month=1)
         else:
             current = current.replace(month=current.month+1)
 
-    # Fetch attendance records & leaves
     attendances = Attendance.objects.filter(employee=employee, date__range=(start_date, end_date))
     leaves = LeaveApplications.objects.filter(
         employee=employee,
@@ -467,6 +532,8 @@ def employee_monthly_attendance(request, employee_id):
         startDate__lte=end_date,
         endDate__gte=start_date
     )
+
+    holidays = set(Holiday.objects.filter(date__range=(start_date, end_date)).values_list('date', flat=True))
 
     leave_days = set()
     for leave in leaves:
@@ -480,25 +547,78 @@ def employee_monthly_attendance(request, employee_id):
     while day <= end_date:
         month_str = day.strftime("%Y-%m")
         attn = attendances.filter(date=day).first()
+
+        day_name = day.strftime("%A")
+        is_weekend = (day_name == weekend_day)
+        is_holiday = day in holidays
+
         if day in leave_days:
             monthly_data[month_str]['leave'] += 1
         elif attn:
-            if attn.inTime and attn.inTime > office_start:
+            if attn.inTime and attn.inTime > office_start and not (is_weekend or is_holiday):
                 monthly_data[month_str]['late'] += 1
                 monthly_data[month_str]['present'] += 1
-            elif attn.status == 'present':
+            elif attn.status == 'present' and not (is_weekend or is_holiday):
                 monthly_data[month_str]['present'] += 1
+            elif attn.status == 'present' and is_weekend:
+                monthly_data[month_str]['weekend_present'] += 1
             else:
-                monthly_data[month_str]['absent'] += 1
+                if not is_weekend and not is_holiday:
+                    monthly_data[month_str]['absent'] += 1
         else:
-            monthly_data[month_str]['absent'] += 1
+            if not is_weekend and not is_holiday:
+                monthly_data[month_str]['absent'] += 1
         day += timedelta(days=1)
 
     months = sorted(monthly_data.keys())
     return JsonResponse({
         'months': months,
         'present': [monthly_data[m]['present'] - monthly_data[m]['late'] for m in months],
+        'weekend_present': [monthly_data[m]['weekend_present'] for m in months],
         'late': [monthly_data[m]['late'] for m in months],
         'leave': [monthly_data[m]['leave'] for m in months],
         'absent': [monthly_data[m]['absent'] for m in months],
     })
+
+
+
+from django.views.decorators.csrf import csrf_exempt
+import json
+def calendar_view(request):
+    year = date.today().year
+   # Prepare months
+    months = []
+    for month in range(1, 13):
+        # Generate days of the month
+        if month == 12:
+            next_month = date(year+1, 1, 1)
+        else:
+            next_month = date(year, month+1, 1)
+        start_day = date(year, month, 1)
+        delta = (next_month - start_day).days
+        days = [start_day + timedelta(days=i) for i in range(delta)]
+        months.append({"number": month, "name": start_day.strftime("%B"), "days": days})
+
+    # Fetch existing holidays
+    holidays = {h.date: h.name for h in Holiday.objects.filter(date__year=year)}
+
+    context = {
+        "year": year,
+        "months": months,
+        "holidays_json": json.dumps({h.date.strftime("%Y-%m-%d"): h.name for h in Holiday.objects.filter(date__year=year)})
+    }
+    return render(request, "calendarPage.html", context)
+
+
+@csrf_exempt
+def add_holiday(request):
+    if request.method == "POST":
+        date_str = request.POST.get("date")
+        name = request.POST.get("name")
+
+        holiday_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        holiday, created = Holiday.objects.update_or_create(
+            date=holiday_date, defaults={"name": name}
+        )
+        return JsonResponse({"success": True, "holiday": holiday.name, "date": date_str})
+    return JsonResponse({"success": False})

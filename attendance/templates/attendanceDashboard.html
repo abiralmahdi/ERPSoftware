@@ -71,10 +71,13 @@
                         </td>
                         <td>{{attn.reason}}</td>
                         <td>{{attn.location}}</td>
-                        <td>{% if attn.inTime <= globalConfig.officeStartTime or not attn.inTime %}
-                            <span class="badge bg-{% if attn.status == 'present' %}success{% elif attn.status == 'leave' %}warning{% else %}danger{% endif %}">{{attn.status}}</span>
+                        <td>
+                            {% if attn.date|date:"l" == globalConfig.weekend and attn.inTime %}
+                                <span class="badge bg-info">Present - Weekend</span>
+                            {% elif attn.inTime <= globalConfig.officeStartTime or not attn.inTime %}
+                                <span class="badge bg-{% if attn.status == 'present' %}success{% elif attn.status == 'leave' %}warning{% else %}danger{% endif %}">{{attn.status}}</span>
                             {% else %}
-                            <span class="badge text-dark" style="background-color: rgb(164, 242, 156) !important;">late</span>
+                                <span class="badge text-dark" style="background-color: rgb(164, 242, 156) !important;">late</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -140,6 +143,11 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Attendance Distribution</h5>
                     <div class="d-flex gap-2">
+                        <p class="d-flex mb-0">
+                            <span id="totalLateHours" style="width: 200px !important;">Total Late Hours: 0</span>
+                            <span id="totalAbsentHours" style="width: 200px !important;">Total Absent Hours: 0</span>
+                            <span id="totalWorkingHours" style="width: 200px !important;">Total Working Hours: 0</span>
+                        </p>
                         <input type="date" id="startDate" class="form-control form-control-sm">
                         <input type="date" id="endDate" class="form-control form-control-sm">
                     </div>
@@ -240,73 +248,89 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-    const startInput = document.getElementById("startDate");
-    const endInput = document.getElementById("endDate");
-    const officeStartTime = "{{ globalConfig.officeStartTime|date:'H:i' }}"; // HH:MM
-
-    const today = new Date();
-    const todayStr = today.toISOString().split("T")[0];
-    startInput.max = todayStr;
-    endInput.max = todayStr;
-
-    const last30 = new Date();
-    last30.setDate(today.getDate() - 30);
-    const last30Str = last30.toISOString().split("T")[0];
-
-    startInput.value = last30Str;
-    endInput.value = todayStr;
-
-    const ctx = document.getElementById("attendanceChart").getContext("2d");
-    let attendanceChart = new Chart(ctx, {
-        type: "bar",
-        data: {
-            labels: [],
-            datasets: [
-                { label: "Present", data: [], backgroundColor: "#28a745", stack: "attendance" },
-                { label: "Late", data: [], backgroundColor: "#20c997", stack: "attendance" },
-                { label: "Absent", data: [], backgroundColor: "#dc3545", stack: "attendance" },
-                { label: "Leave", data: [], backgroundColor: "#ffc107", stack: "attendance" }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: "top" } },
-            scales: {
-                x: { stacked: true },
-                y: { stacked: true, beginAtZero: true }
+            const startInput = document.getElementById("startDate");
+            const endInput = document.getElementById("endDate");
+            const officeStartTime = "{{ globalConfig.officeStartTime|date:'H:i' }}"; // HH:MM
+        
+            const today = new Date();
+            const todayStr = today.toISOString().split("T")[0];
+            startInput.max = todayStr;
+            endInput.max = todayStr;
+        
+            const last30 = new Date();
+            last30.setDate(today.getDate() - 30);
+            const last30Str = last30.toISOString().split("T")[0];
+        
+            startInput.value = last30Str;
+            endInput.value = todayStr;
+        
+            const ctx = document.getElementById("attendanceChart").getContext("2d");
+            let attendanceChart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: "Present", data: [], backgroundColor: "#28a745", stack: "attendance" },
+                        { label: "Weekend Present", data: [], backgroundColor: "#03f0fc", stack: "attendance" },
+                        { label: "Late", data: [], backgroundColor: "#20c997", stack: "attendance" },
+                        { label: "Absent", data: [], backgroundColor: "#dc3545", stack: "attendance" },
+                        { label: "Leave", data: [], backgroundColor: "#ffc107", stack: "attendance" }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: "top" } },
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true }
+                    }
+                }
+            });
+        
+            function fetchAttendanceData(start, end) {
+                if (!start || !end) return;
+        
+                fetch(`/attendance/attendance-data/?start=${start}&end=${end}&officeStartTime=${officeStartTime}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        // Update chart
+                        attendanceChart.data.labels = data.labels;
+        
+                        // Note: `present` includes late, so subtract late to get "on-time present"
+                        attendanceChart.data.datasets[0].data = data.present.map((p, i) => p - data.late[i]); 
+                        attendanceChart.data.datasets[1].data = data.weekend; // weekend present
+                        attendanceChart.data.datasets[2].data = data.late; 
+                        attendanceChart.data.datasets[3].data = data.absent;
+                        attendanceChart.data.datasets[4].data = data.leave;
+        
+                        attendanceChart.update();
+        
+                        // === Update totals ===
+                        const totalLateHours = data.total_late_hours.reduce((a, b) => a + b, 0);
+                        const totalAbsentHours = data.total_absent_hours.reduce((a, b) => a + b, 0);
+                        const totalWorkingHours = data.total_working_hours.reduce((a, b) => a + b, 0);
+        
+                        document.getElementById("totalLateHours").textContent = `Total Late Hours: ${totalLateHours}`;
+                        document.getElementById("totalAbsentHours").textContent = `Total Absent Hours: ${totalAbsentHours}`;
+                        document.getElementById("totalWorkingHours").textContent = `Total Working Hours: ${totalWorkingHours}`;
+                    })
+                    .catch(err => console.error("Error fetching attendance data:", err));
             }
-        }
-    });
-
-    function fetchAttendanceData(start, end) {
-        if (!start || !end) return;
-
-        fetch(`/attendance/attendance-data/?start=${start}&end=${end}&officeStartTime=${officeStartTime}`)
-            .then(res => res.json())
-            .then(data => {
-                attendanceChart.data.labels = data.labels;
-                attendanceChart.data.datasets[0].data = data.present.map((p, i) => p - data.late[i]); // Present without late
-                attendanceChart.data.datasets[1].data = data.late; // Late
-                attendanceChart.data.datasets[2].data = data.absent;
-                attendanceChart.data.datasets[3].data = data.leave;
-                attendanceChart.update();
-            })
-            .catch(err => console.error("Error fetching attendance data:", err));
-    }
-
-    startInput.addEventListener("change", () => {
-        if (startInput.value && endInput.value) fetchAttendanceData(startInput.value, endInput.value);
-    });
-
-    endInput.addEventListener("change", () => {
-        if (startInput.value && endInput.value) fetchAttendanceData(startInput.value, endInput.value);
-    });
-
-    // Load initial data
-    fetchAttendanceData(last30Str, todayStr);
-});
+        
+            startInput.addEventListener("change", () => {
+                if (startInput.value && endInput.value) fetchAttendanceData(startInput.value, endInput.value);
+            });
+        
+            endInput.addEventListener("change", () => {
+                if (startInput.value && endInput.value) fetchAttendanceData(startInput.value, endInput.value);
+            });
+        
+            // Load initial data
+            fetchAttendanceData(last30Str, todayStr);
+        });
         </script>
+        
         
         <script>
             document.addEventListener("DOMContentLoaded", function () {
@@ -317,6 +341,7 @@
     const endDateInput = document.getElementById("quickViewEndDate");
     const tableBody = document.querySelector("#quickViewTableBody");
     const officeStartTime = "{{ officeStartTime }}";
+    const weekend = "{{weekend}}"
     function loadQuickView() {
         const params = new URLSearchParams({
             name: nameInput.value,
@@ -348,11 +373,20 @@
                                 <td>${attn.reason || ''}</td>
                                 <td>${attn.location || ''}</td>
                                 <td>
-                                    ${(!attn.in_time || attn.in_time <= officeStartTime)
-                                        ? `<span class="badge bg-${attn.status === 'present' ? 'success' : attn.status === 'leave' ? 'warning' : 'danger'}">${attn.status}</span>`
-                                        : `<span class="badge text-dark" style="background-color: rgb(164, 242, 156) !important;">late</span>`
+                                    ${
+                                        (() => {
+                                            const dayName = new Date(attn.date).toLocaleDateString('en-US', { weekday: 'long' });
+                                            if (dayName === weekend && attn.in_time) {
+                                                return `<span class="badge bg-info">present-weekend</span>`;
+                                            } else if (!attn.in_time || attn.in_time <= officeStartTime) {
+                                                return `<span class="badge bg-${attn.status === 'present' ? 'success' : attn.status === 'leave' ? 'warning' : 'danger'}">${attn.status}</span>`;
+                                            } else {
+                                                return `<span class="badge text-dark" style="background-color: rgb(164, 242, 156) !important;">late</span>`;
+                                            }
+                                        })()
                                     }
                                 </td>
+                                
                             </tr>
                             `;
                             tableBody.innerHTML += row;
