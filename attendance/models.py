@@ -26,3 +26,11 @@ class Holiday(models.Model):
 
     def __str__(self):
         return f"{self.date} - {self.name}"
+
+class EmployeeLocation(models.Model):
+    lat = models.CharField(max_length=100)
+    lon = models.CharField(max_length=100)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='employeeLocations')
+    date = models.DateField(auto_now_add=True)
+    time = models.TimeField(auto_now_add=True)
+    location = models.CharField(max_length=100, null=True, blank=True)

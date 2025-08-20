@@ -1,0 +1,93 @@
+{% extends 'layout.html' %}
+{% block body %}
+    
+    <style>
+        body {
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 70vh;
+        }
+        .tracker-card {
+            max-width: 400px;
+            width: 100%;
+        }
+        #coords {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+    <div class="card shadow tracker-card text-center p-4">
+        <div class="card-body">
+            <h3 class="card-title mb-4 fw-bold"><span class="text-info">MARKS</span> Automation Ltd</h3>
+            
+            <p id="coords" class="mb-4">Latitude: - , <br> Longitude: -</p>
+            
+            <button id="toggle" class="btn btn-primary btn-lg w-100 mb-3">Start Tracking</button>
+            
+            <div class="text-muted small">Location updates every 5 seconds</div>
+        </div>
+    </div>
+
+    <script>
+        let tracking = false;
+        let interval;
+        const button = document.getElementById('toggle');
+        const coordsDiv = document.getElementById('coords');
+    
+        // Check if tracking was previously enabled
+        if (localStorage.getItem('tracking') === 'true') {
+            tracking = true;
+            button.textContent = "Stop Tracking";
+            startTracking();
+        }
+    
+        button.onclick = () => {
+            tracking = !tracking;
+            localStorage.setItem('tracking', tracking);
+            button.textContent = tracking ? "Stop Tracking" : "Start Tracking";
+            if (tracking) startTracking();
+            else stopTracking();
+        };
+    
+        function startTracking() {
+            if (!navigator.geolocation) {
+                alert("Geolocation not supported");
+                return;
+            }
+            sendLocation(); // Send immediately
+            interval = setInterval(sendLocation, 5000);
+        }
+    
+        function stopTracking() {
+            clearInterval(interval);
+        }
+    
+        function sendLocation() {
+            navigator.geolocation.getCurrentPosition(pos => {
+                const data = {
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude
+                };
+                coordsDiv.innerHTML = `Latitude: ${data.latitude.toFixed(6)}, <br> Longitude: ${data.longitude.toFixed(6)}`;
+                fetch('/attendance/getLocation/{{employee.id}}', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                console.log("Sent:", data);
+            }, err => console.error("Geolocation error:", err), {enableHighAccuracy: true});
+        }
+    
+        // Auto-request permission on load
+        if (tracking) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                console.log("Permission granted");
+            }, err => console.error("Permission denied or error", err));
+        }
+    </script>
+    
+{% endblock %}

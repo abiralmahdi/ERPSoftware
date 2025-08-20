@@ -622,3 +622,75 @@ def add_holiday(request):
         )
         return JsonResponse({"success": True, "holiday": holiday.name, "date": date_str})
     return JsonResponse({"success": False})
+
+
+def sendLocation(request):
+    return render(request, 'mobileApp.html', {'employee':Employee.objects.get(user=request.user)})
+
+@csrf_exempt
+def getLocation(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            latitude = data.get('latitude')
+            longitude = data.get('longitude')
+            print(f"Received location: Latitude={latitude}, Longitude={longitude}")
+            # You can save to DB if needed here
+            return JsonResponse({"status": "success"})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
+    return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
+
+
+from geopy.geocoders import Nominatim
+
+def get_address_from_latlon(lat, lon):
+    geolocator = Nominatim(user_agent="my_django_app")
+    location = geolocator.reverse((lat, lon), language="en")
+    if location:
+        return location.address
+    return "Unknown location"
+
+@csrf_exempt
+def getLocation2(request, employeeID):
+    employee = Employee.objects.get(id=employeeID)
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            latitude = data.get('latitude')
+            longitude = data.get('longitude')
+            print(f"Received location: Latitude={latitude}, Longitude={longitude} and employee: {employee.user.get_full_name()}")
+            EmployeeLocation.objects.create(
+                employee=employee,
+                lat=latitude,
+                lon=longitude,
+                location=get_address_from_latlon(latitude, longitude),
+            )
+            return JsonResponse({"status": "success"})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
+    return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
+
+def seeEmployeeLocation(request):
+    employees = Employee.objects.all().prefetch_related('employeeLocations')
+
+    employee_data = []
+    for emp in employees:
+        latest_location = emp.employeeLocations.order_by('-date', '-time').first()
+        employee_data.append({
+            "id": emp.id,
+            "name": f"{emp.user.first_name} {emp.user.last_name}",
+            "designation": emp.designation.title if emp.designation else "",
+            "department": emp.department.name if emp.department else "",
+            "lat": latest_location.lat if latest_location else None,
+            "lon": latest_location.lon if latest_location else None,
+            "location": latest_location.location if latest_location else "No location available",
+            "date": latest_location.date if latest_location else None,
+            "time": latest_location.time if latest_location else None,
+        })
+
+    context = {
+        "employees": employee_data
+    }
+    return render(request, "seeEmployeeLocation.html", context)
+

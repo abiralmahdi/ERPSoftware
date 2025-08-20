@@ -93,7 +93,11 @@
                               <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#attendanceDetailsModal" 
                               data-location="{{ attn.location }}" 
                               data-reason="{{ attn.reason }}" 
-                              data-image="{{ attn.photo.url }}" 
+                              {% if attn.photo %}
+                                  data-image="{{ attn.photo.url }}"
+                              {% else %}
+                                  data-image=""
+                              {% endif %}
                               data-lat="{{ attn.latitude }}" 
                               data-lon="{{ attn.longitude }}"
                               data-id="{{attn.id}}">

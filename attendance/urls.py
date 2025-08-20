@@ -14,4 +14,8 @@ urlpatterns = [
     path("employee_monthly_attendance/<str:employee_id>", views.employee_monthly_attendance, name="employee_monthly_attendance"),
     path("calendar", views.calendar_view, name="calendar_view"),
     path("calendar/add_holiday/", views.add_holiday, name="add_holiday"),
+    path("getLocation", views.getLocation, name="getLocation"),
+    path("sendLocation", views.sendLocation, name="sendLocation"),
+    path("seeEmployeeLocation", views.seeEmployeeLocation, name="seeEmployeeLocation"),
+    path("getLocation/<str:employeeID>", views.getLocation2, name="getLocation2"),
 ]

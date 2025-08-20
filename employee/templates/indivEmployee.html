@@ -16,14 +16,12 @@
             <img src="" alt="No Photo Found">
             {% endif %}
             <input type="file" class="form-control" name="profile_picture">
-
             <button class="btn btn-dark mt-3" type="submit">Save Changes</button>
         </div>
 
         <!-- Details -->
         <div class="col-md-3">
             <h3>{{ employee.user.get_full_name }}</h3>
-        
             <div class="mb-2 row align-items-center">
                 <label class="col-sm-2 col-form-label"><strong>Designation:</strong></label>
                 <div class="col-sm-8 ms-5">

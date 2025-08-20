@@ -51,6 +51,8 @@
                       <li><a class="dropdown-item" href="/attendance/attendanceList">Attendance List</a></li>
                       <li><a class="dropdown-item" href="/attendance/remoteAttendance">Remote Attendance</a></li>
                       <li><a class="dropdown-item" href="/attendance/calendar">Calendar and Holidays</a></li>
+                      <li><a class="dropdown-item" href="/attendance/sendLocation">Send Current Location</a></li>
+                      <li><a class="dropdown-item" href="/attendance/seeEmployeeLocation">RTLT</a></li>
                     </ul>
                   </li>
               <li class="nav-item dropdown">
@@ -76,17 +78,8 @@
                   <!-- <li><a class="dropdown-item" href="/leave/leaveEncashment">Leave Encashment Process</a></li> -->
                 </ul>
               </li>
-              <!-- <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if 'salary' in request.path %}fw-bold{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  Salary
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a class="dropdown-item" href="#">Action</a></li>
-                  <li><a class="dropdown-item" href="#">Another action</a></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="#">Something else here</a></li>
-                </ul>
-              </li>
+
+              <!--
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle {% if 'tax' in request.path %}fw-bold{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                   Tax
