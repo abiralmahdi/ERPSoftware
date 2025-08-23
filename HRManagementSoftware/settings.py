@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'tax', 
     'leave',
     'core',
+    'crm',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

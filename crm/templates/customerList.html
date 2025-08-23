@@ -1,0 +1,170 @@
+{% extends 'layout2.html' %}
+{% block body %}
+<style>
+    .sticky-header th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background-color: #f8f9fa;
+    }
+
+    .table-container {
+        max-height: 400px;
+        overflow-y: auto;
+        position: relative;
+        width: 48%;
+    }
+
+    .table-wrapper {
+        display: flex;
+        justify-content: space-between;
+        gap: 2%;
+        flex-wrap: wrap;
+    }
+
+    .add-btn-container {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    .add-btn-container>div {
+        width: 48%;
+        display: flex;
+        justify-content: flex-end;
+    }
+</style>
+
+<!-- Department Modal -->
+<div class="modal fade" id="addDepartmentModal" tabindex="-1" aria-labelledby="addDepartmentModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" enctype="multipart/form-data" action="/crm/addCustomer">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Customer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label>Customer Name</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <div class="modal-body">
+                    <label>Customer Address</label>
+                    <input type="text" name="address" class="form-control" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-dark">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Designation Modal -->
+<div class="modal fade" id="addDesignationModal" tabindex="-1" aria-labelledby="addDesignationModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" enctype="multipart/form-data" action="/crm/addContactPerson">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Contact Person</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label>Contact Name</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <div class="modal-body">
+                    <label>Contact Phone</label>
+                    <input type="text" name="phone" class="form-control" required>
+                </div>
+                <div class="modal-body">
+                    <label>Contact Email</label>
+                    <input type="text" name="email" class="form-control" required>
+                </div>
+                <div class="modal-body">
+                    <label>Customer</label>
+                    <select name="customer" id="">
+                        {% for customer in customers %}
+                        <option value="{{customer.id}}">{{customer.name}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-dark">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="container" style="margin-top: 130px; min-width: 1600px">
+    <div class="add-btn-container">
+        <div>
+            <h3 class="h4 me-auto fw-bold">Customers</h3>
+            <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDepartmentModal">
+                <i class="fa-solid fa-plus me-2"></i>Add Customer
+            </button>
+        </div>
+        <div>
+            <h3 class="h4 me-auto fw-bold">Contact Persons</h3>
+            <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDesignationModal">
+                <i class="fa-solid fa-plus me-2"></i>Add Contact Person
+            </button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <!-- Department Table -->
+        <div class="table-container">
+            <table class="table table-striped">
+                <thead class="sticky-header">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in customers %}
+                    <tr>
+                        <td>{{ customer.id }}</td>
+                        <td>{{ customer.name }}</td>
+                        <td>{{ customer.address }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Designation Table -->
+        <div class="table-container">
+            <table class="table table-striped">
+                <thead class="sticky-header">
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Customer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contact in contactPersons %}
+                    <tr>
+                        <td>{{ contact.id }}</td>
+                        <td>{{ contact.agent_name }}</td>
+                        <td>{{ contact.agent_contact }}</td>
+                        <td>{{ contact.agent_email }}</td>
+                        <td>{{ contact.customer.name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
