@@ -9,5 +9,10 @@ urlpatterns = [
     path('completeVisit/<str:visitID>', views.completeVisit, name='completeVisit'),
     path('addContactPerson', views.addContactPerson, name='addContactPerson'),
     path('lead', views.lead, name='lead'),
-    path('addLead', views.addLead, name='addLead'),
+    path('addLead/<str:visit_id>', views.addLead, name='addLead'),
+    path('addLeadSeperately', views.addLeadSeperately, name='addLeadSeperately'),
+    path('completeLead/<str:leadID>', views.completeLead, name='completeLead'),
+    path('offers', views.offer, name='offer'),
+    path('addOffer/<str:leadID>', views.addOffer, name='addOffer'),
+    path('editOffer/<str:offerID>', views.editOffer, name='editOffer'),
 ]

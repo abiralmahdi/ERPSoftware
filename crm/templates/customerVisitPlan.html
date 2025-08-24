@@ -1,24 +1,137 @@
 {% extends 'layout2.html' %}
 {% block body %}
+<!-- Apply Visit Modal -->
+<div class="modal fade" id="applyVisitModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content shadow-lg border-0 rounded-3">
+        <form method="POST" action="/crm/addCustomerVisit" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="apply_visit" value="1">
+  
+          <!-- Header -->
+          <div class="modal-header bg-dark text-white">
+            <h5 class="modal-title"><i class="bi bi-calendar-check"></i> Apply for Customer Visit</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+  
+          <!-- Body -->
+          <div class="modal-body">
+            <div class="row g-3">
+              
+              <!-- Customer -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Visit To</label>
+                <select name="visitTo" id="visitTo" class="form-select" required>
+                  <option value="">-- Select Customer --</option>
+                  {% for customer in customers %}
+                    <option value="{{customer.id}}">{{customer.name}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+  
+              <!-- Agent -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Customer Contact Person</label>
+                <select name="visitToAgent" id="visitToAgent" class="form-select" required>
+                  <option value="">-- Select Contact Person --</option>
+                  {% for customer in customers %}
+                    {% for agent in customer.agent.all %}
+                      <option value="{{agent.id}}">{{agent.agent_name}}</option>
+                    {% endfor %}
+                  {% endfor %}
+                </select>
+              </div>
+  
+              <!-- Reason -->
+              <div class="col-12">
+                <label class="form-label fw-bold">Reason for Visit</label>
+                <textarea class="form-control" name="reason" rows="3" placeholder="Enter reason..." required></textarea>
+              </div>
+  
+              <!-- Start Date -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Start Date</label>
+                <input type="datetime-local" class="form-control" name="startDate" required>
+              </div>
+  
+              <!-- End Date -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold">End Date</label>
+                <input type="datetime-local" class="form-control" name="endDate" required>
+              </div>
+  
+              <!-- Camera -->
+              <div class="col-12">
+                <label class="form-label fw-bold">Capture Visit Photo</label>
+                <div class="border rounded p-2 text-center bg-light">
+                  <video id="cameraStream" autoplay playsinline class="w-100 rounded" style="max-height:220px;"></video>
+                  <canvas id="snapshotCanvas" class="d-none"></canvas>
+                  <button type="button" class="btn btn-outline-dark btn-sm mt-2" id="captureBtn">
+                    <i class="bi bi-camera"></i> Capture
+                  </button>
+                  <img id="capturedImage" class="d-none mt-2 border rounded w-100"/>
+                  <input type="hidden" name="capturedPhoto" id="capturedPhoto">
+                </div>
+              </div>
+  
+              <!-- Location -->
+              <div class="col-12">
+                <label class="form-label fw-bold">Location</label>
+                <div class="p-2 bg-light border rounded">
+                  <p class="small mb-1 text-muted" id="locationStatus">Fetching location...</p>
+                  <input type="hidden" name="latitude" id="latitude">
+                  <input type="hidden" name="longitude" id="longitude">
+                </div>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Footer -->
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-dark px-4"><i class="bi bi-send"></i> Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  
 <div class="container mt-5" style="min-width: 1600px !important">
     <div class="d-flex mb-3 mt-5 pt-5">
-        <form class="form d-flex me-auto align-items-center" method="POST">
-            {% csrf_token %}
-            <input type="hidden" name="search_form" value="1">
-    
+        <form class="form d-flex me-auto align-items-center" method="GET">
             <!-- Employee Search -->
             <input type="text" class="form-control me-2" style="height: 40px; width: 400px;" 
                    name="employeeSearch" placeholder="Search employees..." 
-                   value="{{ request.POST.employeeSearch }}">
+                   value="{{ request.GET.employeeSearch }}">
+    
+            <!-- Customer Filter -->
+            <select name="customer" class="form-select me-2" style="height:40px; width: 200px;">
+                <option value="">All Customers</option>
+                {% for c in customers %}
+                    <option value="{{ c.id }}" {% if request.GET.customer == c.id|stringformat:"s" %}selected{% endif %}>
+                        {{ c.name }}
+                    </option>
+                {% endfor %}
+            </select>
+    
+            <!-- Agent Filter -->
+            <select name="agent" class="form-select me-2" style="height:40px; width: 200px;">
+                <option value="">All Agents</option>
+                {% for a in agents %}
+                    <option value="{{ a.id }}" {% if request.GET.agent == a.id|stringformat:"s" %}selected{% endif %}>
+                        {{ a.agent_name }}
+                    </option>
+                {% endfor %}
+            </select>
     
             <!-- Date Filters -->
             <label class="ms-2 me-1">From:</label>
             <input type="date" class="form-control me-2" name="startDateFilter"
-                   value="{{ request.POST.startDateFilter }}">
+                   value="{{ request.GET.startDateFilter }}">
     
             <label class="ms-2 me-1">To:</label>
             <input type="date" class="form-control me-2" name="endDateFilter"
-                   value="{{ request.POST.endDateFilter }}">
+                   value="{{ request.GET.endDateFilter }}">
     
             <button type="submit" class="btn btn-dark">Filter</button>
         </form>
@@ -30,6 +143,7 @@
             <i class="fa-solid fa-plus me-2"></i>Add Customer
         </button>
     </div>
+    
     
 
     <div class="row">
@@ -131,7 +245,7 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
-                                <form action="/crm/completeVisit/{{application.id}}" method="POST">
+                                <form action="/crm/completeVisit/{{application.id}}" method="POST" enctype="multipart/form-data">
                                     {% csrf_token %}
                                     <div class="mb-2">
                                     <label class="form-label">Employee</label>
@@ -177,13 +291,23 @@
                                         <label class="form-label">Potential Scope</label>
                                         <textarea class="form-control" rows="2" name="potentialScope">{{ application.potentialScope }}</textarea>
                                     </div>
+                                    <div class="mb-2 d-flex">
+                                        <input type="file" name="potentialScopeFile" id="potentialScopeFile" class="form-control" style="max-width: 590px !important;">
+                                        {% if application.scopeFile %}
+                                            <a href="{{ application.scopeFile.url }}" target="_blank" class="btn btn-outline-dark btn-sm ms-1">
+                                                <i class="fa-solid fa-file mb-1"></i> Download Existing File
+                                            </a>
+                                        {% endif %} 
+                                    </div>
+                                    <small>Upload new file to remove the existing one.</small>
                                     <div class="mb-2">
                                     <label class="form-label">Note</label>
                                     <textarea class="form-control" rows="2" name="note">{{ application.note }}</textarea>
                                     </div>
                                     <div class="d-flex">
                                         <div class="my-2 ms-auto">
-                                            <button type="submit" class="btn btn-dark btn-block">Submit</button>
+                                            <button type="submit" class="btn btn-dark btn-block">Save</button>
+                                            <a href="/crm/addLead/{{application.id}}" class="btn btn-dark btn-block ms-2">Add Lead</a>
                                         </div>
                                     </div>
                                 </form>
@@ -209,51 +333,6 @@
 </div>
 
 
-
-<!-- Apply Visit Modal -->
-<div class="modal fade" id="applyVisitModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="POST" action="/crm/addCustomerVisit">
-                {% csrf_token %}
-                <input type="hidden" name="apply_visit" value="1">
-                <div class="modal-header">
-                    <h5 class="modal-title">Apply for Visit</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <label>Visit To</label>
-                    <select name="visitTo" id="visitTo" class="form-control" required>
-                        {% for customer in customers %}
-                        <option value="{{customer.id}}">{{customer.name}}</option>
-                        {% endfor %}
-                    </select>
-
-                    <label>Customer Contact Person</label>
-                    <select name="visitToAgent" id="visitToAgent" class="form-control" required>
-                        {% for customer in customers %}
-                        {% for agent in customer.agent.all %}
-                        <option value="{{agent.id}}">{{agent.agent_name}}</option>
-                        {% endfor %}
-                        {% endfor %}
-                    </select>
-
-                    <label class="mt-3">Reason</label>
-                    <textarea class="form-control" name="reason" required></textarea>
-
-                    <label class="mt-3">Start Date</label>
-                    <input type="datetime-local" class="form-control" name="startDate" required>
-
-                    <label class="mt-3">End Date</label>
-                    <input type="datetime-local" class="form-control" name="endDate" required>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-dark">Submit</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 
 <!-- Add Customer Modal -->
@@ -281,5 +360,58 @@
         </div>
     </div>
 </div>
+
+
+<script>
+    // Camera Capture
+const video = document.getElementById("cameraStream");
+const canvas = document.getElementById("snapshotCanvas");
+const captureBtn = document.getElementById("captureBtn");
+const capturedImage = document.getElementById("capturedImage");
+const capturedPhotoInput = document.getElementById("capturedPhoto");
+
+// Start camera stream
+if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => {
+      video.srcObject = stream;
+    })
+    .catch(err => {
+      console.error("Camera error:", err);
+      document.querySelector("#captureBtn").disabled = true;
+    });
+}
+
+// Capture snapshot
+captureBtn.addEventListener("click", () => {
+  const ctx = canvas.getContext("2d");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  const dataURL = canvas.toDataURL("image/png");
+  capturedImage.src = dataURL;
+  capturedImage.classList.remove("d-none");
+  capturedPhotoInput.value = dataURL;
+});
+
+// Geolocation
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      document.getElementById("latitude").value = pos.coords.latitude;
+      document.getElementById("longitude").value = pos.coords.longitude;
+      document.getElementById("locationStatus").textContent =
+        `Lat: ${pos.coords.latitude.toFixed(5)}, Lng: ${pos.coords.longitude.toFixed(5)}`;
+    },
+    err => {
+      document.getElementById("locationStatus").textContent =
+        "Unable to fetch location.";
+    }
+  );
+}
+
+    </script>
+    
 {% endblock %}
 

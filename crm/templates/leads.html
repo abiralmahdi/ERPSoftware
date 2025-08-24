@@ -13,33 +13,137 @@
     }
 </style>
 
+
+
+<!-- Lead Modal -->
+<div class="modal fade" id="leadModal" tabindex="-1" aria-labelledby="leadModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      
+      <div class="modal-header">
+        <h5 class="modal-title" id="leadModalLabel">Add New Lead</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <form method="POST" action="/crm/addLeadSeperately" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row g-3">
+
+            <div class="col-md-6">
+              <label class="form-label">Customer</label>
+              <select class="form-select" name="customer">
+                <option value="">Select</option>
+                {% for customer in customers %}
+                  <option value="{{ customer.id }}">{{ customer.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Agent</label>
+              <select class="form-select" name="agent">
+                <option value="">Select</option>
+                {% for agent in agents %}
+                  <option value="{{ agent.id }}">{{ agent.agent_name }} - {{ agent.customer.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Scope of Supply</label>
+              <input type="text" name="scopeOfSupply" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Scope File</label>
+              <input type="file" name="scopeFile" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Offer Submission Date</label>
+              <input type="date" name="offerSubmissionDate" class="form-control" required>
+            </div>
+
+            <!-- <div class="col-md-6">
+              <label class="form-label">Status</label>
+              <select class="form-select" name="status" required>
+                <option value="Open">Open</option>
+                <option value="Closed">Closed</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div> -->
+
+            <div class="col-md-12">
+              <label class="form-label">Note</label>
+              <textarea name="note" class="form-control"></textarea>
+            </div>
+
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-dark">Save Lead</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
 <div class="container" style="margin-top: 80px; min-width: 1600px">
     <div class="d-flex mb-3">
-        <form class="form d-flex" method="GET" action="">
-            <!-- Search Input -->
-            <input type="text" class="form-control" style="height: 40px; width: 300px;"
-                   name="search" placeholder="Search leads..."
-                   value="{{ request.GET.search }}">
-
-            <!-- Status Dropdown -->
-            <select name="status" class="form-select ms-2" style="height: 40px; width: 180px;">
-                <option value="">All Statuses</option>
-                {% for s in statuses %}
-                    <option value="{{ s }}" {% if request.GET.status == s %}selected{% endif %}>{{ s }}</option>
-                {% endfor %}
-            </select>
-
-            <!-- Date Filters -->
-            <input type="date" name="start_date" class="form-control ms-2" style="height:40px"
-                   value="{{ request.GET.start_date }}">
-            <input type="date" name="end_date" class="form-control ms-2" style="height:40px"
-                   value="{{ request.GET.end_date }}">
-
-            <!-- Search Button -->
-            <button type="submit" class="btn btn-dark ms-2">Filter</button>
-            
-        </form>
-        <button type="button" class="btn btn-dark ms-auto" data-bs-toggle="modal" data-bs-target="#addLeadModal">
+      <form class="form d-flex flex-wrap" method="GET" action="">
+        <!-- Search Input -->
+        <input type="text" class="form-control mb-2 me-2"
+               style="height: 40px; width: 380px;"
+               name="search" placeholder="Search (Scope, Note...)"
+               value="{{ request.GET.search }}">
+    
+        <!-- Customer Dropdown -->
+        <select name="customer" class="form-select mb-2 me-2" style="height: 40px; width: 200px;">
+            <option value="">All Customers</option>
+            {% for c in customers %}
+                <option value="{{ c.id }}" {% if request.GET.customer == c.id|stringformat:"s" %}selected{% endif %}>
+                    {{ c.name }}
+                </option>
+            {% endfor %}
+        </select>
+    
+        <!-- Agent Dropdown -->
+        <select name="agent" class="form-select mb-2 me-2" style="height: 40px; width: 200px;">
+            <option value="">All Agents</option>
+            {% for a in agents %}
+                <option value="{{ a.id }}" {% if request.GET.agent == a.id|stringformat:"s" %}selected{% endif %}>
+                    {{ a.agent_name }}
+                </option>
+            {% endfor %}
+        </select>
+    
+        <!-- Employee Dropdown -->
+        <select name="employee" class="form-select mb-2 me-2" style="height: 40px; width: 200px;">
+            <option value="">All Employees</option>
+            {% for e in employees %}
+                <option value="{{ e.id }}" {% if request.GET.employee == e.id|stringformat:"s" %}selected{% endif %}>
+                    {{ e.user.get_full_name }}
+                </option>
+            {% endfor %}
+        </select>
+    
+        <!-- Date Filters -->
+        <input type="date" name="start_date" class="form-control mb-2 me-2"
+               style="height:40px; width: 180px"
+               value="{{ request.GET.start_date }}">
+        <input type="date" name="end_date" class="form-control mb-2 me-2"
+               style="height:40px; width: 180px"
+               value="{{ request.GET.end_date }}">
+    
+        <!-- Search Button -->
+        <button type="submit" class="btn btn-dark mb-2">Filter</button>
+    </form>
+    
+        <button type="button" class="btn btn-dark ms-auto btn-sm" data-bs-toggle="modal" data-bs-target="#leadModal">
             <i class="fa-solid fa-plus me-2"></i>
             Add Lead
         </button>
@@ -53,9 +157,12 @@
                     <th>Date</th>
                     <th>Customer</th>
                     <th>Agent</th>
-                    <th>Employee</th>
+                    <th>Generated By</th>
+                    <th>Assigned To</th>
+                    <th>Offer Submission Date</th>
                     <th>Scope of Supply</th>
-                    <th>Status</th>
+                    <th>Note</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -63,16 +170,115 @@
                 <tr>
                     <td>{{ forloop.counter }}</td>
                     <td>{{ lead.date }}</td>
-                    <td>{{ lead.customerVisit.customer.name }}</td>
-                    <td>{{ lead.customerVisit.agent.agent_name }}</td>
-                    <td>{{ lead.customerVisit.employee.user.get_full_name }}</td>
+                    {% if lead.customerVisit %}
+                      <td>{{ lead.customerVisit.customer.name }}</td>
+                      <td>{{ lead.customerVisit.agent.agent_name }} - {{ lead.customerVisit.agent.agent_contact }} </td>
+                      <td>{{ lead.customerVisit.employee.user.get_full_name }}</td>
+                    {% else %}
+                      <td>{{ lead.customer.name }}</td>
+                      <td>{{ lead.agent.agent_name }} - {{ lead.agent.agent_contact }}</td>
+                      <td>{{ lead.employee.user.get_full_name }}</td>
+                    {% endif %}
+                    <td>{{ lead.assignedTo.user.get_full_name }}</td>
+                    <td>{{ lead.offerSubmissionDate }}</td>
                     <td>{{ lead.scopeOfSupply }}</td>
+                    <td>{{ lead.note }}</td>
                     <td>
-                        <span class="badge bg-{% if lead.status == 'Open' %}warning{% elif lead.status == 'In Progress' %}info{% else %}success{% endif %}">
-                            {{ lead.status }}
-                        </span>
+                      <button class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#viewModal{{ lead.id }}">
+                        View
+                    </button>
                     </td>
                 </tr>
+
+                <div class="modal fade" id="viewModal{{ lead.id }}" tabindex="-1" aria-hidden="true">
+                  <div class="modal-dialog modal-lg">
+                  <div class="modal-content">
+                      <div class="modal-header">
+                      <h5 class="modal-title">Leads #{{ forloop.counter }}</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body">
+                      <form action="/crm/completeLead/{{lead.id}}" method="POST" enctype="multipart/form-data">
+                          {% csrf_token %}
+                          {% if lead.customerVisit %}
+                          <div class="mb-2">
+                          <label class="form-label">Employee</label>
+                          <input type="text" class="form-control" value="{{ lead.customerVisit.employee.user.get_full_name }}" readonly>
+                          </div>
+                          <div class="mb-2">
+                          <label class="form-label">Department</label>
+                          <input type="text" class="form-control" value="{{ lead.customerVisit.employee.department.name }}" readonly>
+                          </div>
+                          <div class="mb-2">
+                          <label class="form-label">Customer</label>
+                          <input type="text" class="form-control" value="{% if lead.customerVisit %}{{ lead.customerVisit.customer.name }}{% else %}{{ lead.customer.name }} {% endif %}" readonly>
+                          </div>
+                          <div class="mb-2">
+                          <label class="form-label">Agent</label>
+                          <input type="text" class="form-control" value="{{ lead.customerVisit.agent.agent_name }} - {{ lead.customerVisit.agent.agent_contact }}" readonly>
+                          </div>
+                          {% else %}
+                          <div class="mb-2">
+                            <label class="form-label">Employee</label>
+                            <input type="text" class="form-control" value="{{ lead.employee.user.get_full_name }}" readonly>
+                            </div>
+                            <div class="mb-2">
+                            <label class="form-label">Department</label>
+                            <input type="text" class="form-control" value="{{ lead.employee.department.name }}" readonly>
+                            </div>
+                            <div class="mb-2">
+                            <label class="form-label">Customer</label>
+                            <input type="text" class="form-control" value="{% if lead.customerVisit %}{{ lead.customerVisit.customer.name }}{% else %}{{ lead.customer.name }} {% endif %}" readonly>
+                            </div>
+                            <div class="mb-2">
+                            <label class="form-label">Agent</label>
+                            <input type="text" class="form-control" value="{{ lead.agent.agent_name }} - {{ lead.agent.agent_contact }}" readonly>
+                            </div>
+                            {% endif %}
+                            <div class="mb-2">
+                              <label class="form-label">Assign To</label>
+                              <select name="assignedTo" id="assignedTo" class="form-control" required>
+                                {% for emp in employees %}
+                                <option value="{{emp.id}}" {% if emp.id == lead.assignedTo.id %}selected{% endif %}>{{ emp.user.get_full_name }}</option>
+                                {% endfor %}
+                              </select>
+                            </div>
+
+                          <div class="row">
+                          <div class="col mb-2">
+                              <label class="form-label">Offer Submission Date</label>
+                              <input type="date" name="offerSubmissionDate" id="offerSubmissionDate" class="form-control" value="{{ lead.offerSubmissionDate|date:'Y-m-d' }}" required>
+                          </div>
+                          
+                          <div class="mb-2">
+                              <label class="form-label">Scope of Supply</label>
+                              <textarea class="form-control" rows="2" name="scopeOfSupply" required>{{ lead.scopeOfSupply }}</textarea>
+                          </div>
+                          <div class="mb-2 d-flex">
+                              <input type="file" name="scopeFile" id="scopeFile" class="form-control" style="max-width: 590px !important;">
+                              {% if lead.scopeFile %}
+                                  <a href="{{ lead.scopeFile.url }}" target="_blank" class="btn btn-outline-dark btn-sm ms-1">
+                                      <i class="fa-solid fa-file mb-1"></i> Download Existing File
+                                  </a>
+                              {% endif %} 
+                          </div>
+                          <small>Upload new file to remove the existing one.</small>
+                          <div class="mb-2">
+                          <label class="form-label">Note</label>
+                          <textarea class="form-control" rows="2" name="note" required>{{ lead.note }}</textarea>
+                          </div>
+                          <div class="d-flex">
+                              <div class="my-2 ms-auto">
+                                  <button type="submit" class="btn btn-dark btn-block">Save</button>
+                                  <a href="/crm/addOffer/{{lead.id}}" class="btn btn-dark btn-block ms-2">Add Offer</a>
+                              </div>
+                          </div>
+                      </form>
+                      </div>
+
+                  </div>
+                  </div>
+              </div>
                 {% empty %}
                 <tr>
                     <td colspan="7" class="text-center">No leads found.</td>

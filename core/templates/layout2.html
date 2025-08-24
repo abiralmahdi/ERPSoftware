@@ -25,7 +25,7 @@
     
     <nav class="navbar navbar-expand-lg bg-body-tertiary shadow fixed-top">
         <div class="container-fluid">
-          <a class="navbar-brand d-flex" style="margin-bottom: -10px;"><h6 class="h5 fw-bold text-info">MARKS</h6><h6 class="h5 fw-bold text-dark ms-2">Automation Ltd.</h6></a>
+          <a class="navbar-brand d-flex" style="margin-bottom: -10px;" href="/"><h6 class="h5 fw-bold text-info">MARKS</h6><h6 class="h5 fw-bold text-dark ms-2">Automation Ltd.</h6></a>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
@@ -42,7 +42,7 @@
                     </a>
                   </li>
                   <li class="nav-item dropdown">
-                    <a class="nav-link {% if 'leads' in request.path %}fw-bold{% endif %}" href="/crm/lead">
+                    <a class="nav-link {% if 'lead' in request.path %}fw-bold{% endif %}" href="/crm/lead">
                       Leads
                     </a>
                   </li>  
