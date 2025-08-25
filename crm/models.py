@@ -56,6 +56,41 @@ class Offer(models.Model):
     offer_date = models.DateField(null=True, blank=True)
     negoDate = models.DateField(null=True, blank=True)
     tgtPrice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    offerValue = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     discount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     status = models.CharField(max_length=10, null=True, blank=True)
     note = models.CharField(max_length=100, null=True, blank=True)
+    offerFile = models.FileField(upload_to='files', null=True, blank=True)
+
+
+class Order(models.Model):
+    offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='order')
+    delivery_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, null=True, blank=True)
+    advance_payment = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    order_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    poRef = models.CharField(max_length=100, null=True, blank=True, default='')
+    note = models.CharField(max_length=100, null=True, blank=True)
+
+
+class OrderFiles(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='orderFile')
+    file = models.FileField(upload_to='orderfiles', null=True, blank=True)
+
+class Sales(models.Model):
+    saleOrderReference = models.CharField(max_length=100, default='', null=True, blank=True)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='sales')
+    invoiceDate = models.DateField(null=True, blank=True)
+    invoiceRef = models.CharField(max_length=100, null=True, blank=True)
+    totalInvoiceValue = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    vat = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    ait = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    status = models.CharField(max_length=20, null=True, blank=True)
+    remarks = models.CharField(max_length=100, null=True, blank=True)
+
+class AccountsRecieveable(models.Model):
+    sales = models.ForeignKey(Sales, on_delete=models.CASCADE, related_name='accountsRecieveable')
+    paymentDate = models.DateField(null=True, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    status = models.CharField(max_length=20, null=True, blank=True)
+    remarks = models.CharField(max_length=100, null=True, blank=True)

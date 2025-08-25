@@ -15,4 +15,10 @@ urlpatterns = [
     path('offers', views.offer, name='offer'),
     path('addOffer/<str:leadID>', views.addOffer, name='addOffer'),
     path('editOffer/<str:offerID>', views.editOffer, name='editOffer'),
+    path('orders', views.orders, name='orders'),
+    path('addOrder/<str:offerID>', views.addOrder, name='addOrder'),
+    path('editOrder/<str:order_id>', views.editOrder, name='editOrder'),
+    path('sales', views.sales, name='sales'),
+    path('editSale/<str:saleID>', views.editSale, name='editSale'),
+    path('accountsRecieveable', views.accountsRecieveable, name='accountsRecieveable'),
 ]

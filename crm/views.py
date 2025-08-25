@@ -62,6 +62,7 @@ from django.utils import timezone
 from django.shortcuts import redirect, get_object_or_404
 from django.core.files.base import ContentFile
 import base64
+
 def addCustomerVisit(request):
     if request.method == 'POST':
         visitTo = request.POST['visitTo']
@@ -192,7 +193,7 @@ def lead(request):
         "customerVisit__agent",
         "customer",
         "agent",
-    ).all()
+    ).all().prefetch_related('offer')
 
     search_query = request.GET.get("search", "").strip()
     status_filter = request.GET.get("status", "")
@@ -365,8 +366,7 @@ def offer(request):
 # Offer status: Submitted, In Progress, Pending
 def addOffer(request, leadID):
     lead = Lead.objects.get(id=leadID)
-    offer = Offer.objects.create(lead=lead, offer_date=lead.offerSubmissionDate, status='Pending')
-    offer.save()
+    offer = Offer.objects.get_or_create(lead=lead, offer_date=lead.offerSubmissionDate)
 
     return redirect("/crm/offers")
 
@@ -381,6 +381,10 @@ def editOffer(request, offerID):
         offer.scopeOfSupply = request.POST.get('scopeOfSupply')
         offer.note = request.POST.get('note')
         offer.tgtPrice = request.POST.get('tgtPrice')
+        offer.offerValue = request.POST.get('offerValue')
+        # File handling
+        if 'offerFile' in request.FILES:
+            offer.offerFile = request.FILES['offerFile']
 
         # Validate date input
         try:
@@ -397,3 +401,298 @@ def editOffer(request, offerID):
         'offer': offer
     }
     return render(request, 'edit_offer.html', context)
+
+
+
+from django.db.models import Q
+from django.shortcuts import render
+from .models import Order, Customer, Employee, Lead
+from datetime import date
+
+def orders(request):
+    orders_qs = Order.objects.select_related('offer', 'offer__lead').all()
+
+    # GET params
+    search = request.GET.get('search', '').strip()
+    customer_id = request.GET.get('customer')
+    agent_id = request.GET.get('agent')
+    employee_id = request.GET.get('employee')        # AssignedTo
+    market_person_id = request.GET.get('marketPersons')  # Lead Generator
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    # Search in Offer.note or Lead.scopeOfSupply
+    if search:
+        orders_qs = orders_qs.filter(
+            Q(offer__note__icontains=search) |
+            Q(offer__lead__scopeOfSupply__icontains=search)
+        )
+
+    # Filter by Market Person (Lead Generator)
+    if market_person_id:
+        orders_qs = orders_qs.filter(
+            Q(offer__lead__customerVisit__employee_id=market_person_id) |
+            Q(offer__lead__employee_id=market_person_id)
+        )
+
+    # Filter by Customer
+    if customer_id:
+        orders_qs = orders_qs.filter(
+            Q(offer__lead__customer_id=customer_id) |
+            Q(offer__lead__customerVisit__customer_id=customer_id)
+        )
+
+    # Filter by Agent
+    if agent_id:
+        orders_qs = orders_qs.filter(
+            Q(offer__lead__agent_id=agent_id) |
+            Q(offer__lead__customerVisit__agent_id=agent_id)
+        )
+
+    # Filter by AssignedTo (Sales Person)
+    if employee_id:
+        orders_qs = orders_qs.filter(offer__lead__assignedTo_id=employee_id)
+
+    # Filter by delivery_date
+    if start_date:
+        orders_qs = orders_qs.filter(delivery_date__gte=start_date)
+    if end_date:
+        orders_qs = orders_qs.filter(delivery_date__lte=end_date)
+
+    # Remove duplicates from reverse FK joins
+
+    today = date.today()
+    orders_qs = orders_qs.distinct()
+
+    for order in orders_qs:
+        order.is_overdue = order.delivery_date and today > order.delivery_date
+    context = {
+        "orders": orders_qs,
+        "customers": Customer.objects.all(),
+        "agents": CustomerAgent.objects.all(),
+        "employees": Employee.objects.all(),
+    }
+    return render(request, "order.html", context)
+
+
+def addOrder(request, offerID):
+    offer = Offer.objects.get(id=offerID)
+    order = Order.objects.create(offer=offer)
+    order.save()
+    return redirect("/crm/orders")
+
+
+
+def editOrder(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    if request.method == "POST":
+        order.delivery_date = request.POST.get("delivery_date")
+        order.status = request.POST.get("status")
+        order.advance_payment = request.POST.get("advance_payment")
+        order.order_value = request.POST.get("order_value")
+        order.note = request.POST.get("note")
+        order.poRef = request.POST.get("poRef")
+
+        # validate date
+        if order.delivery_date:
+            order.delivery_date = parse_date(order.delivery_date)
+
+        order.save()
+
+        # Handle files
+        if request.FILES.getlist("order_files"):
+            for f in request.FILES.getlist("order_files"):
+                OrderFiles.objects.create(order=order, file=f)
+        
+        if order.status == 'Delivered' or order.status == 'Partial Delivered':
+            sale = Sales.objects.create(order=order, invoiceDate=order.delivery_date, status=order.status)
+
+        return redirect("/crm/orders")
+
+
+from django.db.models import Q
+from django.shortcuts import render
+from .models import Sales, Customer
+
+def sales(request):
+    # Base queryset with related fields to minimize queries
+    sales_qs = Sales.objects.select_related(
+        'order',
+        'order__offer',
+        'order__offer__lead',
+        'order__offer__lead__customer',
+        'order__offer__lead__customerVisit'
+    ).all()
+
+    # --- Get filter parameters from GET ---
+    invoiceRef = request.GET.get("invoiceRef", "").strip()
+    poRef = request.GET.get("poRef", "").strip()
+    customer_id = request.GET.get("customer", "").strip()
+    status = request.GET.get("status", "").strip()
+    start_date = request.GET.get("start_date", "").strip()
+    end_date = request.GET.get("end_date", "").strip()
+
+    # --- Apply filters ---
+    if invoiceRef:
+        sales_qs = sales_qs.filter(invoiceRef__icontains=invoiceRef)
+
+    if poRef:
+        sales_qs = sales_qs.filter(order__poRef__icontains=poRef)
+
+    if customer_id:
+        sales_qs = sales_qs.filter(
+            Q(order__offer__lead__customer__id=customer_id) |
+            Q(order__offer__lead__customerVisit__customer__id=customer_id)
+        )
+
+    if status:
+        sales_qs = sales_qs.filter(status=status)
+
+    if start_date:
+        sales_qs = sales_qs.filter(invoiceDate__gte=start_date)
+
+    if end_date:
+        sales_qs = sales_qs.filter(invoiceDate__lte=end_date)
+
+    # --- Prepare context data for the table ---
+    sales_data = []
+    for sale in sales_qs:
+        order = sale.order
+        offer = order.offer
+        lead = offer.lead
+
+        # prefer lead.customer if available, else fallback to customer from visit
+        customer = lead.customer if lead and lead.customer else (
+            lead.customerVisit.customer if lead and lead.customerVisit else None
+        )
+
+        try:
+            vatAmount = sale.vat*sale.totalInvoiceValue/100
+            x = sale.totalInvoiceValue - vatAmount
+            aitAmount = sale.ait*x/100
+            total_order_value = x - aitAmount
+        except:
+            vatAmount = 0
+            aitAmount = 0
+            total_order_value = 0
+
+
+
+        sales_data.append({
+            "id": sale.id,
+            "poRef": order.poRef,
+            "customer": customer.name if customer else "",
+            "invoice_ref": sale.invoiceRef,
+            "total_invoice_value": sale.totalInvoiceValue,
+            "vat": sale.vat,
+            "ait": sale.ait,
+            "invoice_date": sale.invoiceDate,
+            "total_order_value": total_order_value,
+            "status": sale.status,
+            "remarks": sale.remarks,
+            "saleOrderReference":sale.saleOrderReference,
+            "vatAmount":vatAmount,
+            "aitAmount":aitAmount,
+        })
+
+    # Customers dropdown
+    customers = Customer.objects.all()
+
+    context = {
+        "sales_data": sales_data,
+        "customers": customers,
+    }
+    return render(request, "sales.html", context)
+
+
+def editSale(request, saleID):
+    sale = get_object_or_404(Sales, id=saleID)
+
+
+    if request.method == "POST":
+        sale.invoiceRef = request.POST.get("invoiceRef")
+        sale.totalInvoiceValue = request.POST.get("totalInvoiceValue")
+        sale.vat = request.POST.get("vat")
+        sale.ait = request.POST.get("ait")
+        sale.status = request.POST.get("status")
+        sale.remarks = request.POST.get("remarks")
+        sale.saleOrderReference = request.POST.get("saleOrderReference")
+
+        sale.save()
+
+        AccountsRecieveable.objects.get_or_create(sales=sale, amount=sale.totalInvoiceValue, status='Due')
+
+        return redirect("/crm/sales")
+
+
+
+def accountsRecieveable(request):
+    ar_qs = AccountsRecieveable.objects.select_related('sales', 'sales__order', 'sales__order__offer', 
+                                                       'sales__order__offer__lead', 
+                                                       'sales__order__offer__lead__customer').all()
+
+    # --- Filtering ---
+    poRef = request.GET.get('poRef')
+    invoiceRef = request.GET.get('invoiceRef')
+    customer_id = request.GET.get('customer')
+    status = request.GET.get('status')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    if poRef:
+        ar_qs = ar_qs.filter(sales__order__poRef__icontains=poRef)
+
+    if invoiceRef:
+        ar_qs = ar_qs.filter(sales__invoiceRef__icontains=invoiceRef)
+
+    if customer_id:
+        ar_qs = ar_qs.filter(
+            sales__order__offer__lead__customer__id=customer_id
+        )
+
+    if status:
+        ar_qs = ar_qs.filter(status=status)
+
+    if start_date:
+        ar_qs = ar_qs.filter(sales__invoiceDate__gte=start_date)
+
+    if end_date:
+        ar_qs = ar_qs.filter(sales__invoiceDate__lte=end_date)
+
+    # --- Prepare data for template ---
+    accountsRecieveable = []
+    for ar in ar_qs:
+        sale = ar.sales
+        order = sale.order
+        lead = order.offer.lead if order.offer else None
+        try:
+            customer = lead.customer.name
+        except:
+            customer = lead.customerVisit.customer.name
+
+        # Calculations
+        receivable_amount = ar.amount or 0
+        focused_payment_due = sale.totalInvoiceValue or 0  # example, can customize
+        aging = (date.today() - (ar.paymentDate or date.today())).days if ar.paymentDate else 0
+
+        accountsRecieveable.append({
+            "id": ar.id,
+            "saleOrderRef": sale.saleOrderReference or "",
+            "poRef": order.poRef or "",
+            "invoiceRef": sale.invoiceRef or "",
+            "customer": customer,
+            "receivable_amount": receivable_amount,
+            "focused_payment_due": focused_payment_due,
+            "aging": aging,
+            "status": ar.status or "",
+        })
+
+    # Get all customers for filter dropdown
+    customers = Customer.objects.all()
+
+    context = {
+        "accountsRecieveable": accountsRecieveable,
+        "customers": customers,
+    }
+    return render(request, "accountRecieveable.html", context)

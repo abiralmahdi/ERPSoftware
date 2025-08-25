@@ -270,7 +270,17 @@
                           <div class="d-flex">
                               <div class="my-2 ms-auto">
                                   <button type="submit" class="btn btn-dark btn-block">Save</button>
+                                  {% if lead.offer %}
                                   <a href="/crm/addOffer/{{lead.id}}" class="btn btn-dark btn-block ms-2">Add Offer</a>
+                                  {% else %}
+                                  <span data-bs-toggle="tooltip" 
+                                        data-bs-placement="top" 
+                                        title="An offer has already been made from this lead">
+                                    <button type="button" class="btn btn-dark btn-block ms-2" disabled>
+                                      Add Offer
+                                    </button>
+                                  </span>
+                                  {% endif %}
                               </div>
                           </div>
                       </form>

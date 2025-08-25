@@ -1,0 +1,94 @@
+{% extends 'layout2.html' %}
+{% load fileBaseName %}
+{% block body %}
+<style>
+    .sticky-header th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background-color: #f8f9fa;
+    }
+    .table th, .table td {
+        padding-top: 0.3rem;
+        padding-bottom: 0.3rem;
+    }
+</style>
+
+<div class="container" style="margin-top: 80px; min-width: 1600px">
+    <div class="d-flex mb-3">
+         <!-- Filter Form -->
+    <form class="d-flex flex-wrap mb-3" method="GET">
+        <input type="text" name="poRef" placeholder="PO Ref"
+               value="{{ request.GET.poRef }}" class="form-control mb-2 me-2" style="width:180px">
+               <select name="customer" class="form-select mb-2 me-2" style="width:200px">
+                <option value="">All Customers</option>
+                {% for c in customers %}
+                    <option value="{{ c.id }}" {% if request.GET.customer == c.id|stringformat:"s" %}selected{% endif %}>
+                        {{ c.name }}
+                    </option>
+                {% endfor %}
+            </select>
+               <input type="text" name="invoiceRef" placeholder="Invoice Ref"
+               value="{{ request.GET.invoiceRef }}" class="form-control mb-2 me-2" style="width:180px">
+
+
+
+        <select name="status" class="form-select mb-2 me-2" style="width:180px">
+            <option value="">All Status</option>
+            <option value="Partially Delivered" {% if request.GET.status == "Partially Delivered" %}selected{% endif %}>Partially Delivered</option>
+            <option value="Delivered" {% if request.GET.status == "Delivered" %}selected{% endif %}>Delivered</option>
+            <option value="Cancelled" {% if request.GET.status == "Cancelled" %}selected{% endif %}>Cancelled</option>
+        </select>
+
+        <input type="date" name="start_date" value="{{ request.GET.start_date }}"
+               class="form-control mb-2 me-2" style="width:180px">
+        <input type="date" name="end_date" value="{{ request.GET.end_date }}"
+               class="form-control mb-2 me-2" style="width:180px">
+
+        <button type="submit" class="btn btn-dark mb-2">Filter</button>
+    </form>
+    </div>
+
+    <div class="table-container" style="max-height: 650px; overflow-y: auto;">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Sales Order Ref</th>
+                    <th>PO Reference</th>
+                    <th>Invoice Reference</th>
+                    <th>Customer</th>
+                    <th>Recieveable Amount</th>
+                    <th>Focused Payment Due</th>
+                    <th>Aging</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rec in accountsRecieveable %}
+                    <tr>
+                        <td>{{ rec.saleOrderRef }}</td>
+                        <td>{{ rec.poRef }}</td>
+                        <td>{{ rec.invoiceRef }}</td>
+                        <td>{{ rec.customer }}</td>
+                        <td>{{ rec.receivable_amount|floatformat:2 }}</td>
+                        <td>{{ rec.focused_payment_due|floatformat:2 }}</td>
+                        <td>{{ rec.aging }}</td>
+                        <td>{{ rec.status }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#viewModal{{ rec.id }}">
+                                View
+                            </button>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted">No sales available</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            
+        </table>
+    </div>
+</div>
+{% endblock %}

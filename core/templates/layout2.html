@@ -51,6 +51,21 @@
                   Offers
                 </a>
               </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link {% if 'orders' in request.path %}fw-bold{% endif %}" href="/crm/orders">
+                  Orders
+                </a>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link {% if 'sales' in request.path %}fw-bold{% endif %}" href="/crm/sales">
+                  Sales
+                </a>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link {% if 'accountsRecieveable' in request.path %}fw-bold{% endif %}" href="/crm/accountsRecieveable">
+                  Accounts Recieveable
+                </a>
+              </li>
             </ul>
             <form class="d-flex" role="search">
               {% if request.user.is_anonymous %}
