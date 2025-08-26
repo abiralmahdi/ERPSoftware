@@ -707,6 +707,268 @@
   
 </div>
 
+
+
+<!-- ---------------------------
+     MARKETER / SALESMAN TABLES
+     Insert after charts or where desired
+     --------------------------- -->
+
+     <div class="row mt-4">
+        <!-- MARKETER COLUMN -->
+        <div class="col-lg-6">
+      
+          <!-- Leads as a Marketer -->
+          <div class="card mb-3 shadow-sm">
+            <div class="card-header bg-light">
+              <strong>Leads — As a Marketer</strong>
+            </div>
+            <div class="card-body p-2" style="max-height:260px; overflow:auto;">
+              <table class="table table-sm table-striped mb-0">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Agent</th>
+                    <th>Scope</th>
+                    <th>Assigned To</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for lead in leadsAsAMarketer %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ lead.date|date:"Y-m-d" }}</td>
+                    <td>
+                      {% if lead.customerVisit %}
+                        {{ lead.customerVisit.customer.name }}
+                      {% else %}
+                        {{ lead.customer.name }}
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if lead.customerVisit %}
+                        {{ lead.customerVisit.agent.agent_name }}
+                      {% else %}
+                        {% if lead.agent %}{{ lead.agent.agent_name }}{% endif %}
+                      {% endif %}
+                    </td>
+                    <td style="max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                      {{ lead.scopeOfSupply }}
+                    </td>
+                    <td>{% if lead.assignedTo %}{{ lead.assignedTo.user.get_full_name }}{% endif %}</td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="7" class="text-center text-muted">No leads found</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+      
+          <!-- Offers as a Marketer -->
+          <div class="card mb-3 shadow-sm">
+            <div class="card-header bg-light"><strong>Offers — As a Marketer</strong></div>
+            <div class="card-body p-2" style="max-height:260px; overflow:auto;">
+              <table class="table table-sm table-striped mb-0">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Offer Date</th>
+                    <th>Lead (ID)</th>
+                    <th>Nego Date</th>
+                    <th>Target</th>
+                    <th>Offer Value</th>
+                    <th>Discount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for offer in offersAsAMarketer %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ offer.offer_date|date:"Y-m-d" }}</td>
+                    <td>{{ offer.lead.id }}</td>
+                    <td>{{ offer.negoDate|date:"Y-m-d" }}</td>
+                    <td>{{ offer.tgtPrice }}</td>
+                    <td>{{ offer.offerValue }}</td>
+                    <td>{{ offer.discount }}</td>
+                    <td>{{ offer.status }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="8" class="text-center text-muted">No offers found</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+      
+          <!-- Orders as a Marketer -->
+          <div class="card mb-3 shadow-sm">
+            <div class="card-header bg-light"><strong>Orders — As a Marketer</strong></div>
+            <div class="card-body p-2" style="max-height:260px; overflow:auto;">
+              <table class="table table-sm table-striped mb-0">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>PO Ref</th>
+                    <th>Delivery Date</th>
+                    <th>Offer ID</th>
+                    <th>Order Value</th>
+                    <th>Advance</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for order in ordersAsAMarketer %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ order.poRef }}</td>
+                    <td>{% if order.delivery_date %}{{ order.delivery_date|date:"Y-m-d" }}{% endif %}</td>
+                    <td>{% if order.offer %}{{ order.offer.id }}{% endif %}</td>
+                    <td>{{ order.order_value }}</td>
+                    <td>{{ order.advance_payment }}</td>
+                    <td>{{ order.status }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="7" class="text-center text-muted">No orders found</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+      
+        </div> <!-- /.col-lg-6 -->
+      
+        <!-- SALESMAN COLUMN -->
+        <div class="col-lg-6">
+      
+          <!-- Leads as a Salesman -->
+          <div class="card mb-3 shadow-sm">
+            <div class="card-header bg-light"><strong>Leads — As a Salesman</strong></div>
+            <div class="card-body p-2" style="max-height:260px; overflow:auto;">
+              <table class="table table-sm table-striped mb-0">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Agent</th>
+                    <th>Scope</th>
+                    <th>Generated By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for lead in leadsAsASalesman %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ lead.date|date:"Y-m-d" }}</td>
+                    <td>
+                      {% if lead.customerVisit %}
+                        {{ lead.customerVisit.customer.name }}
+                      {% else %}
+                        {{ lead.customer.name }}
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if lead.customerVisit %}
+                        {{ lead.customerVisit.agent.agent_name }}
+                      {% else %}
+                        {% if lead.agent %}{{ lead.agent.agent_name }}{% endif %}
+                      {% endif %}
+                    </td>
+                    <td style="max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                      {{ lead.scopeOfSupply }}
+                    </td>
+                    <td>{% if lead.employee %}{{ lead.employee.user.get_full_name }}{% endif %}</td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="7" class="text-center text-muted">No leads found</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+      
+          <!-- Offers as a Salesman -->
+          <div class="card mb-3 shadow-sm">
+            <div class="card-header bg-light"><strong>Offers — As a Salesman</strong></div>
+            <div class="card-body p-2" style="max-height:260px; overflow:auto;">
+              <table class="table table-sm table-striped mb-0">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Offer Date</th>
+                    <th>Lead ID</th>
+                    <th>Nego Date</th>
+                    <th>Target</th>
+                    <th>Offer Value</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for offer in offersAsASalesman %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ offer.offer_date|date:"Y-m-d" }}</td>
+                    <td>{{ offer.lead.id }}</td>
+                    <td>{{ offer.negoDate|date:"Y-m-d" }}</td>
+                    <td>{{ offer.tgtPrice }}</td>
+                    <td>{{ offer.offerValue }}</td>
+                    <td>{{ offer.status }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="7" class="text-center text-muted">No offers found</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+      
+          <!-- Orders as a Salesman -->
+          <div class="card mb-3 shadow-sm">
+            <div class="card-header bg-light"><strong>Orders — As a Salesman</strong></div>
+            <div class="card-body p-2" style="max-height:260px; overflow:auto;">
+              <table class="table table-sm table-striped mb-0">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>PO Ref</th>
+                    <th>Delivery Date</th>
+                    <th>Offer ID</th>
+                    <th>Order Value</th>
+                    <th>Advance</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for order in ordersAsASalesman %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ order.poRef }}</td>
+                    <td>{% if order.delivery_date %}{{ order.delivery_date|date:"Y-m-d" }}{% endif %}</td>
+                    <td>{% if order.offer %}{{ order.offer.id }}{% endif %}</td>
+                    <td>{{ order.order_value }}</td>
+                    <td>{{ order.advance_payment }}</td>
+                    <td>{{ order.status }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="7" class="text-center text-muted">No orders found</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+      
+        </div> <!-- /.col-lg-6 -->
+      
+      </div> <!-- /.row -->
+        
+
+
+
+
   
 </div>
 

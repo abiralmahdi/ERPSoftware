@@ -18,7 +18,9 @@
     <div class="d-flex mb-3">
          <!-- Filter Form -->
     <form class="d-flex flex-wrap mb-3" method="GET">
-        <input type="text" name="poRef" placeholder="PO Ref"
+        <input type="text" name="soRef" placeholder="Sales Order Ref"
+               value="{{ request.GET.soRef }}" class="form-control mb-2 me-2" style="width:180px">
+        <input type="text" name="poRef" placeholder="Purchase Order Ref"
                value="{{ request.GET.poRef }}" class="form-control mb-2 me-2" style="width:180px">
                <select name="customer" class="form-select mb-2 me-2" style="width:200px">
                 <option value="">All Customers</option>
@@ -35,9 +37,12 @@
 
         <select name="status" class="form-select mb-2 me-2" style="width:180px">
             <option value="">All Status</option>
-            <option value="Partially Delivered" {% if request.GET.status == "Partially Delivered" %}selected{% endif %}>Partially Delivered</option>
-            <option value="Delivered" {% if request.GET.status == "Delivered" %}selected{% endif %}>Delivered</option>
-            <option value="Cancelled" {% if request.GET.status == "Cancelled" %}selected{% endif %}>Cancelled</option>
+            <option value="Due" {% if request.GET.status == "Due" %}selected{% endif %}>Due</option>
+            <option value="Paid" {% if request.GET.status == "Paid" %}selected{% endif %}>Paid</option>
+            <option value="Paid Without VAT" {% if request.GET.status == "Paid Without VAT" %}selected{% endif %}>Paid Without VAT</option>
+            <option value="Paid Without AIT" {% if request.GET.status == "Paid Without AIT" %}selected{% endif %}>Paid Without AIT</option>
+            <option value="Paid Without VAT and AIT" {% if request.GET.status == "Paid Without VAT and AIT" %}selected{% endif %}>Paid Without VAT and AIT</option>
+              
         </select>
 
         <input type="date" name="start_date" value="{{ request.GET.start_date }}"
@@ -57,9 +62,14 @@
                     <th>PO Reference</th>
                     <th>Invoice Reference</th>
                     <th>Customer</th>
+                    <th>Invoice Amount</th>
+                    <th>VAT</th>
+                    <th>AIT</th>
+                    <th>Total Amount</th>
                     <th>Recieveable Amount</th>
-                    <th>Focused Payment Due</th>
-                    <th>Aging</th>
+                    <th>Recieved Amount</th>
+                    <th>Focused Payment Date</th>
+                    <th>Aging (Days)</th>
                     <th>Status</th>
                     <th>Action</th>
                 </tr>
@@ -71,8 +81,15 @@
                         <td>{{ rec.poRef }}</td>
                         <td>{{ rec.invoiceRef }}</td>
                         <td>{{ rec.customer }}</td>
+                        <td>{{ rec.total_order_value|floatformat:2 }}</td>
+                        <td>
+                            <span class="{% if rec.status == 'Paid Without VAT' or rec.status == 'Paid Without VAT and AIT' %}text-danger fw-bold{% endif %}">{{ rec.vatAmount|floatformat:2 }}</span>
+                        </td>
+                        <td><span class="{% if rec.status == 'Paid Without AIT' or rec.status == 'Paid Without VAT and AIT' %}text-danger fw-bold{% endif %}">{{ rec.aitAmount|floatformat:2 }}</span></td>
+                        <td>{{ rec.total_invoice_value|floatformat:2 }}</td>
                         <td>{{ rec.receivable_amount|floatformat:2 }}</td>
-                        <td>{{ rec.focused_payment_due|floatformat:2 }}</td>
+                        <td>{{ rec.recieved_amount|floatformat:2 }}</td>
+                        <td>{{ rec.paymentDate }}</td>
                         <td>{{ rec.aging }}</td>
                         <td>{{ rec.status }}</td>
                         <td>
@@ -81,6 +98,85 @@
                             </button>
                         </td>
                     </tr>
+<div class="modal fade" id="viewModal{{ rec.id }}" tabindex="-1" aria-labelledby="viewModalLabel{{ rec.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="/crm/updateAccountsRecievable/{{rec.id}}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="viewModalLabel{{ rec.id }}">Accounts Receivable Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Readonly context fields from joined models -->
+          <div class="mb-3">
+            <label class="form-label">Sales Order Ref</label>
+            <input type="text" class="form-control" value="{{ rec.saleOrderRef }}" readonly>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">PO Reference</label>
+            <input type="text" class="form-control" value="{{ rec.poRef }}" readonly>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Customer</label>
+            <input type="text" class="form-control" value="{{ rec.customer }}" readonly>
+          </div>
+
+          <hr>
+
+          <!-- Editable AR fields -->
+          <div class="mb-3">
+            <label class="form-label">Invoice Reference</label>
+            <input type="text" name="invoiceRef" value="{{ rec.invoiceRef }}" class="form-control">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Payment Date</label>
+            <input type="date" name="paymentDate" value="{{ rec.paymentDate|date:'Y-m-d' }}" class="form-control">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Receivable Amount</label>
+            <input type="number" step="0.01" name="amount" value="{{ rec.receivable_amount }}" class="form-control">
+          </div>
+
+          {% if rec.aging is not None %}
+          <div class="mb-3">
+            <label class="form-label">Aging (days)</label>
+            <input type="text" class="form-control" value="{{ rec.aging }}" readonly>
+          </div>
+          {% endif %}
+
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+              <option value="">-- Select --</option>
+              <option value="Due" {% if rec.status == "Due" %}selected{% endif %}>Due</option>
+              <option value="Paid" {% if rec.status == "Paid" %}selected{% endif %}>Paid</option>
+              <option value="Paid Without VAT" {% if rec.status == "Paid Without VAT" %}selected{% endif %}>Paid Without VAT</option>
+              <option value="Paid Without AIT" {% if rec.status == "Paid Without AIT" %}selected{% endif %}>Paid Without AIT</option>
+              <option value="Paid Without VAT and AIT" {% if rec.status == "Paid Without VAT and AIT" %}selected{% endif %}>Paid Without VAT and AIT</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Remarks</label>
+            <textarea name="remarks" class="form-control" rows="2">{{ rec.remarks }}</textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-dark">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
                 {% empty %}
                     <tr>
                         <td colspan="9" class="text-center text-muted">No sales available</td>

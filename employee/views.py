@@ -5,6 +5,7 @@ from .checkNewUser import sync_employees_from_zkteco
 from leave.models import LeaveApplications, VisitApplications
 from attendance.models import Attendance
 from core.models import GlobalConfig
+from crm.models import *
 
 def scanNewEmployee(request):
     sync_employees_from_zkteco()
@@ -134,6 +135,8 @@ def getEmployee(request):
     
 
 from datetime import date, timedelta
+from django.db.models import Q
+
 def indivEmployee(request, employeeID):
     globalConfig = GlobalConfig.objects.all().first()
     employee = get_object_or_404(Employee, id=employeeID)
@@ -145,6 +148,26 @@ def indivEmployee(request, employeeID):
     leave = LeaveApplications.objects.filter(employee=employee)
     attendance = Attendance.objects.filter(employee=employee)
     visits = VisitApplications.objects.filter(employee=employee)
+    
+    # Get CustomerVisits related to the employee
+    customerVisitPlans = CustomerVisits.objects.filter(employee=employee)
+
+    # Leads as a marketer: full objects, not just IDs
+    leadsAsAMarketer = Lead.objects.filter(
+        Q(employee=employee) |
+        Q(customerVisit__in=CustomerVisits.objects.filter(employee=employee))
+    ).distinct()
+
+    # Offers and orders as marketer
+    offersAsAMarketer = Offer.objects.filter(lead__in=leadsAsAMarketer)
+    ordersAsAMarketer = Order.objects.filter(offer__in=offersAsAMarketer)
+
+    # Leads as salesman: full objects
+    leadsAsASalesman = Lead.objects.filter(assignedTo=employee)
+    offersAsASalesman = Offer.objects.filter(lead__in=leadsAsASalesman)
+    ordersAsASalesman = Order.objects.filter(offer__in=offersAsASalesman)
+
+
     today = date.today()
     today_minus_30 = today - timedelta(days=30)
     today_minus_365 = today - timedelta(days=365)
@@ -170,7 +193,15 @@ def indivEmployee(request, employeeID):
         'globalConfig':globalConfig,
         'today':today,
         'today_minus_30':today_minus_30,
-        'today_minus_365':today_minus_365
+        'today_minus_365':today_minus_365,
+        'customerVisitPlans':customerVisitPlans,
+        'leadsAsAMarketer':leadsAsAMarketer,
+        'offersAsAMarketer':offersAsAMarketer,
+        'ordersAsAMarketer':ordersAsAMarketer,
+        'leadsAsASalesman':leadsAsASalesman,
+        'offersAsASalesman':offersAsASalesman,
+        'ordersAsASalesman':ordersAsASalesman,
+
     })
 
 

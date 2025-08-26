@@ -21,4 +21,5 @@ urlpatterns = [
     path('sales', views.sales, name='sales'),
     path('editSale/<str:saleID>', views.editSale, name='editSale'),
     path('accountsRecieveable', views.accountsRecieveable, name='accountsRecieveable'),
+    path('updateAccountsRecievable/<str:pk>', views.updateAccountsRecieveable, name='updateAccountsRecieveable'),
 ]

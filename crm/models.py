@@ -90,7 +90,9 @@ class Sales(models.Model):
 
 class AccountsRecieveable(models.Model):
     sales = models.ForeignKey(Sales, on_delete=models.CASCADE, related_name='accountsRecieveable')
+    invoiceRef = models.CharField(max_length=100, null=True, blank=True)
     paymentDate = models.DateField(null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     status = models.CharField(max_length=20, null=True, blank=True)
     remarks = models.CharField(max_length=100, null=True, blank=True)
+    totalInvoiceValue = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)

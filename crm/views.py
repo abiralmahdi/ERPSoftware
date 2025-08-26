@@ -382,6 +382,14 @@ def editOffer(request, offerID):
         offer.note = request.POST.get('note')
         offer.tgtPrice = request.POST.get('tgtPrice')
         offer.offerValue = request.POST.get('offerValue')
+        offer.status = request.POST.get('status')
+        offer.save()
+        print(offer.status)
+        if request.POST.get('status') == "Win":
+            offer = Offer.objects.get(id=offerID)
+            if offer.status == "Win":
+                order = Order.objects.create(offer=offer)
+                order.save()
         # File handling
         if 'offerFile' in request.FILES:
             offer.offerFile = request.FILES['offerFile']
@@ -477,8 +485,9 @@ def orders(request):
 
 def addOrder(request, offerID):
     offer = Offer.objects.get(id=offerID)
-    order = Order.objects.create(offer=offer)
-    order.save()
+    if offer.status == "Win":
+        order = Order.objects.create(offer=offer)
+        order.save()
     return redirect("/crm/orders")
 
 
@@ -506,7 +515,7 @@ def editOrder(request, order_id):
                 OrderFiles.objects.create(order=order, file=f)
         
         if order.status == 'Delivered' or order.status == 'Partial Delivered':
-            sale = Sales.objects.create(order=order, invoiceDate=order.delivery_date, status=order.status)
+            sale = Sales.objects.create(order=order, status=order.status)
 
         return redirect("/crm/orders")
 
@@ -528,10 +537,12 @@ def sales(request):
     # --- Get filter parameters from GET ---
     invoiceRef = request.GET.get("invoiceRef", "").strip()
     poRef = request.GET.get("poRef", "").strip()
+    soRef = request.GET.get("soRef", "").strip()
     customer_id = request.GET.get("customer", "").strip()
     status = request.GET.get("status", "").strip()
     start_date = request.GET.get("start_date", "").strip()
     end_date = request.GET.get("end_date", "").strip()
+    # invoiceDate = request.GET.get("invoiceDate", "").strip()
 
     # --- Apply filters ---
     if invoiceRef:
@@ -539,6 +550,9 @@ def sales(request):
 
     if poRef:
         sales_qs = sales_qs.filter(order__poRef__icontains=poRef)
+    
+    if soRef:
+        sales_qs = sales_qs.filter(saleOrderReference__icontains=soRef)
 
     if customer_id:
         sales_qs = sales_qs.filter(
@@ -594,6 +608,8 @@ def sales(request):
             "saleOrderReference":sale.saleOrderReference,
             "vatAmount":vatAmount,
             "aitAmount":aitAmount,
+            "invoiceDate":sale.invoiceDate
+
         })
 
     # Customers dropdown
@@ -618,10 +634,11 @@ def editSale(request, saleID):
         sale.status = request.POST.get("status")
         sale.remarks = request.POST.get("remarks")
         sale.saleOrderReference = request.POST.get("saleOrderReference")
+        sale.invoiceDate = request.POST.get('invoiceDate')
 
         sale.save()
 
-        AccountsRecieveable.objects.get_or_create(sales=sale, amount=sale.totalInvoiceValue, status='Due')
+        AccountsRecieveable.objects.get_or_create(sales=sale, amount=sale.totalInvoiceValue, status='Due', invoiceRef=sale.invoiceRef)
 
         return redirect("/crm/sales")
 
@@ -639,12 +656,16 @@ def accountsRecieveable(request):
     status = request.GET.get('status')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
+    soRef = request.GET.get('soRef')
 
     if poRef:
         ar_qs = ar_qs.filter(sales__order__poRef__icontains=poRef)
 
+    if soRef:
+        ar_qs = ar_qs.filter(sales__saleOrderReference__icontains=soRef)
+
     if invoiceRef:
-        ar_qs = ar_qs.filter(sales__invoiceRef__icontains=invoiceRef)
+        ar_qs = ar_qs.filter(invoiceRef__icontains=invoiceRef)
 
     if customer_id:
         ar_qs = ar_qs.filter(
@@ -659,11 +680,23 @@ def accountsRecieveable(request):
 
     if end_date:
         ar_qs = ar_qs.filter(sales__invoiceDate__lte=end_date)
+    
+    
 
     # --- Prepare data for template ---
     accountsRecieveable = []
     for ar in ar_qs:
         sale = ar.sales
+        try:
+            vatAmount = sale.vat*sale.totalInvoiceValue/100
+            x = sale.totalInvoiceValue - vatAmount
+            aitAmount = sale.ait*x/100
+            total_order_value = x - aitAmount
+        except:
+            vatAmount = 0
+            aitAmount = 0
+            total_order_value = 0
+
         order = sale.order
         lead = order.offer.lead if order.offer else None
         try:
@@ -673,20 +706,26 @@ def accountsRecieveable(request):
 
         # Calculations
         receivable_amount = ar.amount or 0
-        focused_payment_due = sale.totalInvoiceValue or 0  # example, can customize
-        aging = (date.today() - (ar.paymentDate or date.today())).days if ar.paymentDate else 0
+        aging = -(date.today() - (sale.invoiceDate or date.today())).days if sale.invoiceDate else 0
 
         accountsRecieveable.append({
             "id": ar.id,
             "saleOrderRef": sale.saleOrderReference or "",
             "poRef": order.poRef or "",
-            "invoiceRef": sale.invoiceRef or "",
+            "invoiceRef": ar.invoiceRef or "",
             "customer": customer,
             "receivable_amount": receivable_amount,
-            "focused_payment_due": focused_payment_due,
             "aging": aging,
             "status": ar.status or "",
+            "remarks": ar.remarks or "",
+            "paymentDate": ar.paymentDate,
+            "total_invoice_value": sale.totalInvoiceValue,
+            'total_order_value':total_order_value,
+            "vatAmount":vatAmount,
+            "aitAmount":aitAmount,
+            "recieved_amount": sale.totalInvoiceValue - receivable_amount
         })
+
 
     # Get all customers for filter dropdown
     customers = Customer.objects.all()
@@ -696,3 +735,44 @@ def accountsRecieveable(request):
         "customers": customers,
     }
     return render(request, "accountRecieveable.html", context)
+
+
+from django.utils.dateparse import parse_date
+
+def updateAccountsRecieveable(request, pk):
+    ar = get_object_or_404(AccountsRecieveable, pk=pk)
+
+    if request.method == "POST":
+        ar.invoiceRef = request.POST.get("invoiceRef") or ar.invoiceRef
+        
+        ar.status = request.POST.get("status") or ar.status
+        ar.remarks = request.POST.get("remarks") or ar.remarks
+        
+        sale = ar.sales
+        try:
+            vatAmount = sale.vat*sale.totalInvoiceValue/100
+            x = sale.totalInvoiceValue - vatAmount
+            aitAmount = sale.ait*x/100
+            total_order_value = x - aitAmount
+        except:
+            vatAmount = 0
+            aitAmount = 0
+            total_order_value = 0
+
+        if request.POST.get('status') == 'Paid Without VAT':
+            ar.amount = vatAmount
+        elif request.POST.get('status') == 'Paid':
+            ar.amount = 0
+        elif request.POST.get('status') == 'Paid Without AIT':
+            ar.amount = aitAmount
+        elif request.POST.get('status') == 'Paid Without VAT and AIT':
+            ar.amount = aitAmount + vatAmount
+
+        paymentDate_raw = request.POST.get("paymentDate")
+        ar.paymentDate = parse_date(paymentDate_raw) if paymentDate_raw else ar.paymentDate
+
+        totalInvoiceValue_raw = request.POST.get("totalInvoiceValue")
+        ar.totalInvoiceValue = totalInvoiceValue_raw if totalInvoiceValue_raw else ar.totalInvoiceValue
+
+        ar.save()
+    return redirect("/crm/accountsRecieveable")
