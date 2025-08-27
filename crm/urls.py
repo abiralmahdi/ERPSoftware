@@ -22,4 +22,5 @@ urlpatterns = [
     path('editSale/<str:saleID>', views.editSale, name='editSale'),
     path('accountsRecieveable', views.accountsRecieveable, name='accountsRecieveable'),
     path('updateAccountsRecievable/<str:pk>', views.updateAccountsRecieveable, name='updateAccountsRecieveable'),
+    path('employeeWeeklyStatus/<str:employee_id>', views.employeeWeeklyStatus, name='employeeWeeklyStatus'),
 ]

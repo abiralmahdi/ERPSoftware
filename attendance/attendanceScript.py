@@ -12,7 +12,7 @@ from leave.models import LeaveApplications, VisitApplications
 from zk import ZK
 
 # Device configurations (use hostnames if you added them in docker-compose extra_hosts)
-DEVICE_IPS = ["192.168.1.201", "103.29.60.50"]
+DEVICE_IPS = ["192.168.1.201", "103.29.60.50", "192.168.1.202"]
 DEVICE_PORT = 4370
 
 today = date.today()

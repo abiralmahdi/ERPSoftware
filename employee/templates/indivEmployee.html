@@ -4,6 +4,12 @@
 
 {% block body %}
 
+<style>
+#employeeWeeklyChart {
+    max-width: 100%;
+    max-height: 400px;
+}
+</style>
 
 <div class="container bg-white p-4 shadow rounded" style="margin-top: 60px; min-width: 1600px !important;">
     <form action="/employees/editEmployee/{{employee.id}}" method="post" enctype="multipart/form-data" class="row">
@@ -967,7 +973,30 @@
         
 
 
-
+      <div class="row mt-4">
+        <div class="col-12"> <!-- Full width column -->
+          <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+              <h5 class="card-title mb-0">Employee-Customer Relationship Stats</h5>
+              <div class="d-flex gap-2 mt-2 mt-md-0">
+                <input type="date" id="startDateCRM" class="form-control form-control-sm" 
+                       value="{{ today_minus_30|date:'Y-m-d' }}"
+                       >
+                <input type="date" id="endDateCRM" class="form-control form-control-sm" 
+                       value="{{ today|date:'Y-m-d' }}"
+                       >
+                <button class="btn btn-sm btn-dark" id="updateChart">Apply</button>
+              </div>
+            </div>
+            <div class="card-body p-0">
+              <div style="width: 100%; height: 400px;"> <!-- Full width container -->
+                <canvas id="employeeWeeklyChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
 
   
 </div>
@@ -1096,4 +1125,108 @@ window.onload = loadChart;
     </script>
 
 
+
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<script>
+    const ctx = document.getElementById('employeeWeeklyChart').getContext('2d');
+    let employeeWeeklyChart;
+    
+    function filterWeeksByDate(weeks, startDate, endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        return weeks.filter(week => {
+            const wk = new Date(week); // convert string to Date
+            return wk >= start && wk <= end;
+        });
+    }
+    
+    async function fetchChartData(startDate, endDate) {
+        try {
+            const employeeId = {{employee.id}}; // Replace with dynamic employee ID if needed
+    
+            const response = await axios.get(`/crm/employeeWeeklyStatus/${employeeId}`, {
+                params: { start_date: startDate, end_date: endDate }
+            });
+    
+            const data = response.data;
+    
+            // Combine all weeks from all series
+            let weeksSet = new Set([
+                ...Object.keys(data.customerVisits),
+                ...Object.keys(data.leadsAsAMarketer),
+                ...Object.keys(data.leadsAsASalesman),
+                ...Object.keys(data.offersAsAMarketer),
+                ...Object.keys(data.offersAsASalesman),
+                ...Object.keys(data.ordersAsAMarketer),
+                ...Object.keys(data.ordersAsASalesman)
+            ]);
+    
+            let weeks = Array.from(weeksSet).sort();
+    
+            // Filter weeks by selected start and end dates
+            weeks = filterWeeksByDate(weeks, startDate, endDate);
+    
+            function getCounts(obj) {
+                return weeks.map(week => obj[week] || 0);
+            }
+    
+            const chartData = {
+                labels: weeks,
+                datasets: [
+                    { label: 'Customer Visits', data: getCounts(data.customerVisits), backgroundColor: 'rgba(54, 162, 235, 0.7)' },
+                    { label: 'Leads as Marketer', data: getCounts(data.leadsAsAMarketer), backgroundColor: 'rgba(255, 99, 132, 0.7)' },
+                    { label: 'Leads as Salesman', data: getCounts(data.leadsAsASalesman), backgroundColor: 'rgba(255, 159, 64, 0.7)' },
+                    { label: 'Offers as Marketer', data: getCounts(data.offersAsAMarketer), backgroundColor: 'rgba(75, 192, 192, 0.7)' },
+                    { label: 'Offers as Salesman', data: getCounts(data.offersAsASalesman), backgroundColor: 'rgba(153, 102, 255, 0.7)' },
+                    { label: 'Orders as Marketer', data: getCounts(data.ordersAsAMarketer), backgroundColor: 'rgba(255, 206, 86, 0.7)' },
+                    { label: 'Orders as Salesman', data: getCounts(data.ordersAsASalesman), backgroundColor: 'rgba(201, 203, 207, 0.7)' }
+                ]
+            };
+    
+            const config = {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: 'Employee Weekly Activity' }
+                    },
+                    scales: {
+                        x: { stacked: false },
+                        y: { stacked: false, beginAtZero: true }
+                    }
+                }
+            };
+    
+            if (employeeWeeklyChart) employeeWeeklyChart.destroy();
+            employeeWeeklyChart = new Chart(ctx, config);
+    
+        } catch (error) {
+            console.error('Error fetching chart data:', error);
+        }
+    }
+    
+    // Initial load with default date range (last 4 weeks)
+    const today = new Date().toISOString().split('T')[0];
+    const fourWeeksLater = new Date(Date.now() + 28*24*60*60*1000).toISOString().split('T')[0];
+    const fourWeeksAgo = new Date(Date.now() - 28*24*60*60*1000).toISOString().split('T')[0];
+    
+    document.getElementById('startDateCRM').value = fourWeeksAgo;
+    document.getElementById('endDateCRM').value = fourWeeksLater;
+
+    console.log(document.getElementById('startDateCRM').value)
+    console.log(document.getElementById('endDateCRM').value)
+    
+    fetchChartData(fourWeeksAgo, fourWeeksLater);
+    
+    // Update chart on button click
+    document.getElementById('updateChart').addEventListener('click', () => {
+        const startDate = document.getElementById('startDateCRM').value;
+        const endDate = document.getElementById('endDateCRM').value;
+        fetchChartData(startDate, endDate);
+    });
+    </script>
 {% endblock %}

@@ -776,3 +776,81 @@ def updateAccountsRecieveable(request, pk):
 
         ar.save()
     return redirect("/crm/accountsRecieveable")
+
+
+from django.db.models import Count
+from django.db.models.functions import TruncWeek
+from django.http import JsonResponse
+from datetime import datetime, timedelta
+from .models import CustomerVisits, Lead, Offer, Order
+from employee.models import Employee
+
+def employeeWeeklyStatus(request, employee_id):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    employee = Employee.objects.get(id=employee_id)
+
+    if start_date:
+        start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+    else:
+        start_date = datetime.today() - timedelta(weeks=8)
+
+    if end_date:
+        end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+    else:
+        end_date = datetime.today()
+
+    # Customer Visits
+    visits_qs = CustomerVisits.objects.filter(
+        employee=employee,
+        startDate__date__range=[start_date, end_date]
+    ).annotate(week=TruncWeek('startDate')).values('week').annotate(count=Count('id')).order_by('week')
+
+    # Leads as Marketer
+    leadsAsAMarketer_qs = Lead.objects.filter(
+        models.Q(employee=employee) | models.Q(customerVisit__employee=employee),
+        date__range=[start_date, end_date]
+    ).annotate(week=TruncWeek('date')).values('week').annotate(count=Count('id')).order_by('week')
+
+    # Leads as Salesman
+    leadsAsASalesman_qs = Lead.objects.filter(
+        assignedTo=employee,
+        date__range=[start_date, end_date]
+    ).annotate(week=TruncWeek('date')).values('week').annotate(count=Count('id')).order_by('week')
+
+    # Offers as Marketer
+    offersAsAMarketer_qs = Offer.objects.filter(
+        lead__employee=employee
+    ).annotate(week=TruncWeek('offer_date')).values('week').annotate(count=Count('id')).order_by('week')
+
+    # Offers as Salesman
+    offersAsASalesman_qs = Offer.objects.filter(
+        lead__assignedTo=employee
+    ).annotate(week=TruncWeek('offer_date')).values('week').annotate(count=Count('id')).order_by('week')
+
+    # Orders as Marketer
+    ordersAsAMarketer_qs = Order.objects.filter(
+        offer__lead__employee=employee
+    ).annotate(week=TruncWeek('delivery_date')).values('week').annotate(count=Count('id')).order_by('week')
+
+    # Orders as Salesman
+    ordersAsASalesman_qs = Order.objects.filter(
+        offer__lead__assignedTo=employee
+    ).annotate(week=TruncWeek('delivery_date')).values('week').annotate(count=Count('id')).order_by('week')
+
+    # Function to convert queryset to {week: count} dictionary
+    def qs_to_dict(qs):
+        return {row['week'].isoformat(): row['count'] for row in qs}
+
+    data = {
+        'customerVisits': qs_to_dict(visits_qs),
+        'leadsAsAMarketer': qs_to_dict(leadsAsAMarketer_qs),
+        'leadsAsASalesman': qs_to_dict(leadsAsASalesman_qs),
+        'offersAsAMarketer': qs_to_dict(offersAsAMarketer_qs),
+        'offersAsASalesman': qs_to_dict(offersAsASalesman_qs),
+        'ordersAsAMarketer': qs_to_dict(ordersAsAMarketer_qs),
+        'ordersAsASalesman': qs_to_dict(ordersAsASalesman_qs),
+    }
+
+    return JsonResponse(data)
