@@ -1,0 +1,43 @@
+{% extends 'layout3.html' %}
+{% block body %}
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead class="sticky-header">
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Task Name</th>
+                <th scope="col">Assigned To</th>
+                <th scope="col">Assign Time</th>
+                <th scope="col">Assigned By</th>
+                <th scope="col">Status</th>
+                <th scope="col">Priority</th>
+                <th scope="col">Deadline</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <th scope="row">{{ forloop.counter }}</th>
+                <td>{{ task.name }}</td>
+                <td>{{ task.assignedTo.user.get_full_name }}</td>
+                <td>{{ task.assignTime }}</td>
+                <td>{{ task.createdBy.user.get_full_name }}</td>
+                <td>{{ task.status }}</td>
+                <td>{{ task.priority }}</td>
+                <td>{{ task.deadline}}</td>
+                <td>
+                    <a href="/wms/projects/{{ indivProject.id }}/tasks/{{ task.id }}/edit" class="btn btn-sm btn-dark">Edit</a>
+                    <a href="/wms/projects/{{ indivProject.id }}/tasks/{{ task.id }}/delete" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" class="text-center">No tasks available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

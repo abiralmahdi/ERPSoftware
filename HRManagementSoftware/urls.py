@@ -25,6 +25,7 @@ urlpatterns = [
     path('leave/', include('leave.urls')),
     path('attendance/', include('attendance.urls')),
     path('crm/', include('crm.urls')),
+    path('wms/', include('wms.urls')),
     path('', include('core.urls')),
 
 ]

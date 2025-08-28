@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'leave',
     'core',
     'crm',
+    'wms',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
