@@ -22,3 +22,17 @@ class Task(models.Model):
     priority = models.CharField(max_length=50)
     description = models.TextField()
     createdBy = models.ForeignKey(Employee, on_delete=models.DO_NOTHING, related_name='created_by')
+    progress = models.FloatField(default=0)
+
+class TaskHistory(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='history')
+    name = models.CharField(max_length=100)
+    assignedTo = models.ForeignKey(Employee, on_delete=models.DO_NOTHING)
+    assignTime = models.DateTimeField()
+    deadline = models.DateTimeField()
+    status = models.CharField(max_length=50)
+    priority = models.CharField(max_length=50)
+    description = models.TextField()
+    progress = models.FloatField(default=0)
+    edited_at = models.DateTimeField(auto_now_add=True)
+    edited_by = models.ForeignKey(Employee, on_delete=models.DO_NOTHING, related_name='edited_tasks')

@@ -38,7 +38,7 @@
             <div class="row g-1 justify-content-center">
                 {% for day in month.days %}
                 <div class="col-1 text-center">
-                    <button class="btn {% if day in holidays %}btn-danger{% else %}btn-outline-secondary{% endif %} day-btn" 
+                    <button class="btn {% if day in holidays %}btn-danger{% endif %} day-btn" 
                             data-date="{{ day|date:'Y-m-d' }}" 
                             data-bs-toggle="modal" data-bs-target="#holidayModal"
                             style="width: 120px !important; height: 100px !important; overflow: auto; scrollbar-width: none; -ms-overflow-style: none;">

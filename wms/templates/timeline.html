@@ -1,67 +1,93 @@
 {% extends "layout3.html" %}
 {% block body %}
 
-<style>
-    #gantt {
-        min-height: 1200px !important;
-        height: 1200px !important;
-    }
-
-    /* Task colors based on class */
-    .bar.overdue { fill: rgb(220, 53, 69) !important; }       /* red */
-    .bar.ongoing { fill: rgb(255, 193, 7) !important; }       /* yellow */
-    .bar.future  { fill: rgb(54, 162, 235) !important; }      /* blue */
-
-    /* Progress colors */
-    .bar.overdue .bar-progress { fill: rgb(200, 30, 50) !important; }
-    .bar.ongoing .bar-progress { fill: rgb(255, 160, 0) !important; }
-    .bar.future  .bar-progress { fill: rgb(30, 100, 200) !important; }
-</style>
-
 <div class="container">
-    <h5 class="mb-4 mt-3">{{ indivProject.title }} - Timeline </h5>
-    <div id="gantt"></div>
+  <h5 class="mb-4 mt-3">{{ indivProject.title }} - Timeline </h5>
+  <div id="gantt" style="width: 1300px; height: 600px;"></div>
 </div>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.css">
-<script src="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.umd.js"></script>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const tasks = {{ tasks|safe }};
-    const today = new Date();
 
-    const ganttTasks = tasks.map(task => {
-        const start = new Date(task.start);
-        const end = new Date(task.end);
-        let custom_class = "";
+    google.charts.load('current', {'packages':['gantt']});
+    google.charts.setOnLoadCallback(drawChart);
 
-        if (end < today) custom_class = "overdue";
-        else if (start <= today && end >= today) custom_class = "ongoing";
-        else custom_class = "future";
-
-        return {
-            ...task,
-            custom_class: custom_class,
-            progress: task.progress || 0
-        };
-    });
-
-    const gantt = new Gantt("#gantt", ganttTasks, {
-        view_mode: 'Day',
-        date_format: 'YYYY-MM-DD',
-        popup_trigger: 'click',
-        custom_popup_html: function(task) {
-            return `
-                <div class="details-container">
-                    <h5>${task.name}</h5>
-                    <p>Start: ${task.start}</p>
-                    <p>End: ${task.end}</p>
-                    <p>Progress: ${task.progress}%</p>
-                </div>
-            `;
+    function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
         }
-    });
+        return color;
+    }
+
+    function darkenColor(hex, percent) {
+        const num = parseInt(hex.slice(1),16),
+              amt = Math.round(2.55 * percent),
+              R = (num >> 16) - amt,
+              G = (num >> 8 & 0x00FF) - amt,
+              B = (num & 0x0000FF) - amt;
+        return "#" + (
+          0x1000000 + 
+          (R<255?R<0?0:R:255)*0x10000 + 
+          (G<255?G<0?0:G:255)*0x100 + 
+          (B<255?B<0?0:B:255)
+        ).toString(16).slice(1);
+    }
+
+    function drawChart() {
+        const data = new google.visualization.DataTable();
+
+        data.addColumn('string', 'Task ID');
+        data.addColumn('string', 'Task Name');
+        data.addColumn('string', 'Resource');
+        data.addColumn('date', 'Start Date');
+        data.addColumn('date', 'End Date');
+        data.addColumn('number', 'Duration');
+        data.addColumn('number', 'Percent Complete');
+        data.addColumn('string', 'Dependencies');
+        data.addColumn({ type: 'string', role: 'style' });
+
+        tasks.forEach(task => {
+            const start = new Date(task.start);
+            const end = new Date(task.end);
+            const color = getRandomColor();
+            const darkColor = darkenColor(color, 30);
+            const progress = task.progress || 0;
+
+            // Single row with gradient fill
+            const style = `fill-color: linear-gradient(to right, ${darkColor} ${progress}%, ${color} ${progress}% 100%);`;
+            
+            data.addRow([
+                task.id,
+                task.name,
+                task.name,
+                start,
+                end,
+                null,
+                progress,
+                task.dependencies || null,
+                style
+            ]);
+        });
+
+        const options = {
+            width: 1300,
+            height: tasks.length * 60 + 250,
+            gantt: {
+                barHeight: 15,
+                trackHeight: 30,
+                percentEnabled: false,
+                labelStyle: { fontSize: 14 },
+            }
+        };
+
+        const chart = new google.visualization.Gantt(document.getElementById('gantt'));
+        chart.draw(data, options);
+    }
 });
 </script>
 

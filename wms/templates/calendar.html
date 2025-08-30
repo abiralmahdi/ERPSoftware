@@ -1,0 +1,86 @@
+{% extends 'layout3.html' %}
+{% block body %}
+<div class="container" style="min-width: 1300px !important;">
+
+    <!-- Month Tabs -->
+    <style>
+        #monthTabs .nav-link { color: black !important; }
+        #monthTabs .nav-link.active { font-weight: bold; }
+    </style>
+    
+    <ul class="nav nav-tabs mt-3" id="monthTabs" role="tablist">
+        {% for month in months %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if month.number == current_month %}active{% endif %}" 
+                    id="tab-{{ month.number }}" data-bs-toggle="tab" 
+                    data-bs-target="#month-{{ month.number }}" type="button" role="tab" style="font-size:small;">
+                {{ month.name }}
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content mt-3">
+        {% for month in months %}
+        <div class="tab-pane fade {% if month.number == current_month %}show active{% endif %}" 
+             id="month-{{ month.number }}" role="tabpanel">
+            <div class="row g-1 justify-content-center">
+                {% for day in month.days %}
+                <div class="col-1 text-center mx-4 position-relative"> <!-- border border-dark rounded-->
+                    <!-- Day Button -->
+                    <button type="button" class="btn day-btn" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#taskModal-{{ day.date|date:'Y_m_d' }}"
+                            style="width: 110px; position: relative; border-width: 2px !important;">
+                        <!-- Task count badge -->
+                        {% if day.tasks %}
+                        <span class="badge bg-danger mt-5 position-absolute bottom-0 end-0 m-1" 
+                              style="font-size: 0.8rem;">
+                            {{ day.tasks|length }}
+                        </span>
+                        {% endif %}
+                        <div style="font-size: 1.5rem; font-weight: bold;">{{ day.day }}</div>
+                        <div style="font-size: 1rem; color: gray;">{{ day.date|date:'D' }}</div>
+                    </button>
+
+                    <!-- Day Modal remains unchanged -->
+                    <div class="modal fade" id="taskModal-{{ day.date|date:'Y_m_d' }}" tabindex="-1" aria-labelledby="taskModalLabel-{{ day.date|date:'Y_m_d' }}" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="taskModalLabel-{{ day.date|date:'Y_m_d' }}">
+                                        Tasks for {{ day.date|date:'M d, Y' }}
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    {% if day.tasks %}
+                                    <ul class="list-group">
+                                        {% for task in day.tasks %}
+                                        <li class="list-group-item">
+                                            <strong>{{ task.name }}</strong> - <em>{{ task.project }}</em> - Assigned to: <strong>{{ task.assignedTo }}</strong> 
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% else %}
+                                    <p class="text-muted">No tasks for this day.</p>
+                                    {% endif %}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if forloop.counter|divisibleby:7 %}<div class="w-100"></div>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

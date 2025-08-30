@@ -8,18 +8,20 @@ employees = list(Employee.objects.all())
 if not employees:
     raise Exception("No employees found! Please create some Employee records first.")
 
+project_list = Projects.objects.filter(id=3)
+
 # create sample projects
-project_list = []
-for i in range(5):   # create 5 projects
-    project = Projects.objects.create(
-        title=f"Project {i+1}",
-        description=f"Description for Project {i+1}",
-        startDate=date.today(),
-        endDate=date.today() + timedelta(days=random.randint(30, 120)),
-        status=random.choice(["Pending", "In Progress", "Completed"]),
-        projectLeader=random.choice(employees)
-    )
-    project_list.append(project)
+# project_list = []
+# for i in range(5):   # create 5 projects
+#     project = Projects.objects.create(
+#         title=f"Project {i+1}",
+#         description=f"Description for Project {i+1}",
+#         startDate=date.today(),
+#         endDate=date.today() + timedelta(days=random.randint(30, 120)),
+#         status=random.choice(["Pending", "In Progress", "Completed"]),
+#         projectLeader=random.choice(employees)
+#     )
+#     project_list.append(project)
 
 # create tasks for each project
 for project in project_list:
