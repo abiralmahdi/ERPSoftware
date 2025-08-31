@@ -77,7 +77,8 @@
 
 <div class="d-flex" style="margin-top: 70px;">
     <div class="bg-light text-dark p-3" style="min-width: 250px; min-height: 100vh;">
-        <h5 class="text-center mb-4">Projects</h5>
+        <!-- <h5 class="text-center mb-4">Projects</h5> -->
+        <button class="btn btn-dark btn-block w-100 mb-4" data-bs-toggle="modal" data-bs-target="#addProjectModal">Add Project</button>
         <ul class="nav flex-column">
           {% for project in projects %}
           <li class="nav-item">
@@ -89,6 +90,62 @@
           {% endfor %}
         </ul>
       </div>
+      
+<!-- Add Project Modal -->
+<div class="modal fade" id="addProjectModal" tabindex="-1" aria-labelledby="addProjectModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="/wms/projects/addProject">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addProjectModalLabel">Add New Project</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Title</label>
+              <input type="text" class="form-control" name="title" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Project Leader</label>
+              <select class="form-select" name="projectLeader">
+                <option value="" selected disabled>Choose Leader</option>
+                {% for emp in employees %}
+                  <option value="{{ emp.id }}">{{ emp.user.get_full_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" name="description" required></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Start Date</label>
+              <input type="date" class="form-control" name="startDate" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">End Date</label>
+              <input type="date" class="form-control" name="endDate" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Status</label>
+              <select class="form-select" name="status" required>
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Create Project</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
       <div style="width: 1200px;">
         {% block body %}

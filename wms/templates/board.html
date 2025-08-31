@@ -1,11 +1,11 @@
 {% extends 'layout3.html' %}
 {% block body %}
 
-<div class="d-flex gap-4 mx-3 justify-content-start align-items-start flex-wrap">
+<div class="d-flex gap-4 mx-5 mt-3 justify-content-start align-items-start flex-wrap">
 
     {% for status in statuses %}
-    <div class="card shadow-sm border-0" style="min-width: 250px; max-width: 300px;">
-        <div class="card-header bg-dark text-white text-center fw-bold">
+    <div class="card shadow border-0" style="min-width: 250px; max-width: 300px;">
+        <div class="card-header text-white text-center fw-bold" style="background-color: rgb(103, 101, 101);">
             {{ status }}
         </div>
         <div class="card-body p-2">

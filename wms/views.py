@@ -1,10 +1,72 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from .models import *
+from django.core.mail import send_mail
+from django.conf import settings
+from django.urls import reverse
 
 # Create your views here.
 def projects(request):
     project = Projects.objects.all().first()
     return redirect("/wms/projects/"+str(project.id))
+from django.core.mail import EmailMultiAlternatives
+from django.urls import reverse
+from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from .models import Projects, Employee
+
+@login_required
+def addProject(request):
+    if request.method == "POST":
+        title = request.POST.get("title")
+        description = request.POST.get("description")
+        startDate = request.POST.get("startDate")
+        endDate = request.POST.get("endDate")
+        status = request.POST.get("status")
+        projectLeader_id = request.POST.get("projectLeader")
+
+        projectLeader = Employee.objects.get(id=projectLeader_id) if projectLeader_id else None
+
+        project = Projects.objects.create(
+            title=title,
+            description=description,
+            startDate=startDate,
+            endDate=endDate,
+            status=status,
+            projectLeader=projectLeader
+        )
+
+        # Send email to project leader
+        if projectLeader and projectLeader.user.email:
+            project_url = request.build_absolute_uri(
+                reverse("projectTasks", args=[project.id])
+            )
+
+            subject = "New Project Assigned"
+            from_email = settings.DEFAULT_FROM_EMAIL
+            to = [projectLeader.user.email]
+
+            # Plain text fallback
+            text_content = (
+                f"You have been assigned as the leader of project: {title}\n"
+                f"View project here: {project_url}"
+            )
+
+            # HTML version with hidden URL
+            html_content = f"""
+                <p>You have been assigned as the leader of project: <strong>{title}</strong></p>
+                <p><a href="{project_url}">Click here to view project</a></p>
+            """
+
+            msg = EmailMultiAlternatives(subject, text_content, from_email, to)
+            msg.attach_alternative(html_content, "text/html")
+            msg.send()
+
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+    employees = Employee.objects.all()
+    return render(request, "projects.html", {"employees": employees})
 
 
 def indivProject(request, projectID):
@@ -60,6 +122,62 @@ def projectTasks(request, projectID):
     return render(request, 'tasks.html', context)
 
 
+@login_required
+def addTask(request, projectID):
+    project = get_object_or_404(Projects, id=projectID)
+    employees = Employee.objects.all()
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+        assignedTo_id = request.POST.get("assignedTo")
+        assignTime = request.POST.get("assignTime")
+        deadline = request.POST.get("deadline")
+        status = request.POST.get("status")
+        priority = request.POST.get("priority")
+        description = request.POST.get("description")
+        progress = request.POST.get("progress", 0)
+
+        try:
+            assignedTo = Employee.objects.get(id=assignedTo_id)
+        except Employee.DoesNotExist:
+            return redirect("project_detail", project_id=project.id)
+
+        task = Task.objects.create(
+            project=project,
+            name=name,
+            created_at=now(),
+            assignedTo=assignedTo,
+            assignTime=assignTime,
+            deadline=deadline,
+            status=status,
+            priority=priority,
+            description=description,
+            createdBy=request.user.employee,  # assuming Employee linked with User
+            progress=progress,
+        )
+
+        # Send email to assigned employee
+        if assignedTo.user.email:
+            task_url = request.build_absolute_uri(
+                reverse("projectTasks", args=[project.id])
+            )
+            subject = "New Task Assigned"
+            message = f"You have been assigned a new task: {name}\n\nView task here: {task_url}"
+            html_message = f"""
+                <p>You have been assigned a new task: <b>{name}</b></p>
+                <p><a href="{task_url}" style="color:#1a73e8; text-decoration:none;">👉 Click here to view the task</a></p>
+            """
+            send_mail(
+                subject=subject,
+                message=message,  # fallback for plain text clients
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[assignedTo.user.email],
+                html_message=html_message,
+            )
+
+        return redirect(f"/wms/projects/{project.id}/tasks")
+
+        
 def deleteTask(request, projectID, taskID):
     task = get_object_or_404(Task, id=taskID)
     task.delete()
@@ -135,7 +253,8 @@ def timeline(request, projectID):
             "end": end_date.strftime("%Y-%m-%d"),
             "progress": getattr(task, 'progress', 0),  # optional field
             "dependencies": "",  # add dependency IDs here if needed
-            "progress":task.progress
+            "progress":task.progress,
+            "status":task.status
         })
 
     context = {

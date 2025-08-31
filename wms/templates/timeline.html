@@ -3,7 +3,31 @@
 
 <div class="container">
   <h5 class="mb-4 mt-3">{{ indivProject.title }} - Timeline </h5>
-  <div id="gantt" style="width: 1300px; height: 600px;"></div>
+  <div id="gantt" style="width: 1300px; min-height: 350px; margin-bottom: 40px;"></div>
+  <div class="table-responsive">
+    <table class="table table-sm table-striped table-hover mt-4">
+      <thead class="table-light text-dark">
+        <tr>
+          <th scope="col">Task Name</th>
+          <th scope="col">Start Date</th>
+          <th scope="col">Deadline</th>
+          <th scope="col">Progress (%)</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for task in tasks %}
+        <tr>
+          <td>{{ task.name }}</td>
+          <td>{{ task.start }}</td>
+          <td>{{ task.end }}</td>
+          <td>{{ task.progress }}</td>
+          <td>{{ task.status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
@@ -76,11 +100,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const options = {
             width: 1300,
-            height: tasks.length * 60 + 250,
+            height: Math.max(350, tasks.length * 40),  // minimum 350px, grows with tasks
             gantt: {
                 barHeight: 15,
                 trackHeight: 30,
-                percentEnabled: false,
+                percentEnabled: true,
                 labelStyle: { fontSize: 14 },
             }
         };
