@@ -13,6 +13,7 @@ urlpatterns = [
     path('addLeadSeperately', views.addLeadSeperately, name='addLeadSeperately'),
     path('completeLead/<str:leadID>', views.completeLead, name='completeLead'),
     path('offers', views.offer, name='offer'),
+    path('offers/generatePDF', views.generatePDF, name='generatePDF'),
     path('addOffer/<str:leadID>', views.addOffer, name='addOffer'),
     path('editOffer/<str:offerID>', views.editOffer, name='editOffer'),
     path('orders', views.orders, name='orders'),

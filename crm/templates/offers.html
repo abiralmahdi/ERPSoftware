@@ -65,6 +65,7 @@
         <!-- Filter Button -->
         <button type="submit" class="btn btn-dark mb-2">Filter</button>
       </form>
+      
     </div>
 
     <div class="table-container" style="max-height: 650px; overflow-y: auto;">
@@ -112,9 +113,181 @@
                         <button class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#editOfferModal{{ offer.id }}">
                             View
                         </button>
+                        <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#pdfModal{{ offer.id }}">
+                          <i class="fa-solid fa-file me-2"></i>
+                          PDF
+                        </button>
                     </td>
                 </tr>
+<!-- PDF Modal -->
+<div class="modal fade" id="pdfModal{{ offer.id }}" tabindex="-1" aria-labelledby="pdfModalLabel{{ offer.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="/crm/offers/generatePDF" id="pdfForm{{ offer.id }}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="pdfModalLabel{{ offer.id }}">Generate PDF for Offer #{{ offer.id }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
 
+        <div class="modal-body">
+          <input type="hidden" name="offer_id" value="{{ offer.id }}">
+          <input type="hidden" name="date" value="{{ today|date:'Y-m-d' }}">
+
+          <div class="mb-3">
+            <label for="title{{ offer.id }}" class="form-label">Title</label>
+            <input type="text" class="form-control" name="title" id="title{{ offer.id }}" value="">
+          </div>
+
+          <div class="mb-3">
+            <label for="customerEmployeePosition{{ offer.id }}" class="form-label">Customer Employee Position</label>
+            <input type="text" class="form-control" name="customerEmployeePosition" id="customerEmployeePosition{{ offer.id }}" value="">
+          </div>
+
+          <div class="mb-3">
+            <label for="proposals{{ offer.id }}" class="form-label">Proposal</label>
+            <input type="text" class="form-control" name="proposals" id="proposals{{ offer.id }}" value="">
+          </div>
+
+          <div class="mb-3">
+            <label for="reference{{ offer.id }}" class="form-label">Reference</label>
+            <input type="text" class="form-control" name="reference" id="reference{{ offer.id }}" value="">
+          </div>
+
+          <div class="mb-3">
+            <label for="limitingDate{{ offer.id }}" class="form-label">Limiting Date</label>
+            <input type="date" class="form-control" name="limitingDate" id="limitingDate{{ offer.id }}" value="{{ today|date:'Y-m-d' }}">
+          </div>
+
+          <div class="mb-3">
+            <label for="vat{{ offer.id }}" class="form-label">VAT (%)</label>
+            <input type="number" class="form-control" name="vat" id="vat{{ offer.id }}">
+          </div>
+
+          <div class="mb-3">
+            <label for="termsAndConditions{{ offer.id }}" class="form-label">Terms and Conditions</label>
+            <textarea class="form-control" name="termsAndConditions" id="termsAndConditions{{ offer.id }}" rows="4"></textarea>
+          </div>
+
+          <hr>
+          <h6>Products</h6>
+          <div id="productsContainer{{ offer.id }}"></div>
+          <button type="button" class="btn btn-sm btn-primary mt-2" onclick="addProductRow({{ offer.id }})">
+            <i class="fa-solid fa-plus mb-1"></i> Add Product
+          </button>
+        </div>
+
+        <input type="hidden" name="products_json" id="productsJson{{ offer.id }}">
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success" onclick="submitPDFForm({{ offer.id }})">Save PDF Data</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function addProductRow(offerId) {
+      const container = document.getElementById('productsContainer' + offerId);
+  
+      // Create product card div
+      const card = document.createElement('div');
+      card.className = 'card p-2 mb-2 productRow';
+  
+      // --- First row: only Product Name ---
+      const row1 = document.createElement('div');
+      row1.className = 'row g-2 align-items-center mb-2';
+  
+      var div = document.createElement('div');
+      div.className = 'col-md-12';
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.name = 'name';
+      input.placeholder = 'Product Name';
+      input.className = 'form-control';
+      div.appendChild(input);
+      row1.appendChild(div);
+  
+      // --- Second row: Qty, Unit, Unit Price, Total + remove button ---
+      const row2 = document.createElement('div');
+      row2.className = 'row g-2 align-items-center';
+  
+      const secondFields = [
+          ['Qty', 'quantity', 'col-md-2', 'number', 'productQty', 'oninput="calculateTotal(this)"'],
+          ['Unit', 'unit', 'col-md-2'],
+          ['Unit Price', 'unit_price', 'col-md-3', 'number', 'productUnitPrice', 'step="0.01" oninput="calculateTotal(this)"'],
+          ['Total', 'total_price', 'col-md-3', 'number', 'productTotal', 'step="0.01" readonly']
+      ];
+  
+      for (var i = 0; i < secondFields.length; i++) {
+          var div = document.createElement('div');
+          div.className = secondFields[i][2];
+          var input = document.createElement('input');
+          input.type = secondFields[i][3] || 'text';
+          input.name = secondFields[i][1];
+          input.placeholder = secondFields[i][0];
+          input.className = 'form-control';
+          if (secondFields[i][4]) input.className += ' ' + secondFields[i][4];
+          if (secondFields[i][5]) input.setAttribute(secondFields[i][5].split('=')[0], secondFields[i][5].split('=')[1].replace(/"/g,''));
+          div.appendChild(input);
+          row2.appendChild(div);
+      }
+  
+      // Remove button
+      var removeDiv = document.createElement('div');
+      removeDiv.className = 'col-md-2 d-flex align-items-center';
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn btn-sm btn-danger';
+      removeBtn.innerHTML = '<i class="fa-solid fa-trash mb-1"></i>';
+      removeBtn.onclick = function() {
+          container.removeChild(card);
+      };
+      removeDiv.appendChild(removeBtn);
+      row2.appendChild(removeDiv);
+  
+      // Append rows to card
+      card.appendChild(row1);
+      card.appendChild(row2);
+      container.appendChild(card);
+  }
+  
+  function calculateTotal(element) {
+      var row = element.closest('.row');
+      var qty = parseFloat(row.getElementsByClassName('productQty')[0].value) || 0;
+      var price = parseFloat(row.getElementsByClassName('productUnitPrice')[0].value) || 0;
+      row.getElementsByClassName('productTotal')[0].value = (qty * price).toFixed(2);
+  }
+  
+  function submitPDFForm(offerId) {
+      var form = document.getElementById('pdfForm' + offerId);
+      if (!form) return;
+  
+      var container = document.getElementById('productsContainer' + offerId);
+      if (!container) return;
+  
+      // Serialize products
+      var rows = container.getElementsByClassName('productRow');
+      var products = [];
+  
+      for (var i = 0; i < rows.length; i++) {
+          var product = {};
+          var inputs = rows[i].getElementsByTagName('input');
+          for (var j = 0; j < inputs.length; j++) {
+              if (inputs[j].name) product[inputs[j].name] = inputs[j].value;
+          }
+          products.push(product);
+      }
+  
+      var hiddenInput = document.getElementById('productsJson' + offerId);
+      hiddenInput.value = JSON.stringify(products);
+  
+      form.submit();
+  }
+  </script>
+  
                 <!-- Edit Offer Modal -->
 <div class="modal fade" id="editOfferModal{{ offer.id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -245,7 +418,15 @@
       </div>
     </div>
   </div>
-  
+
+
+
+
+
+
+
+
+                  
 
                 {% empty %}
                 <tr>

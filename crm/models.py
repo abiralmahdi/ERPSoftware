@@ -63,6 +63,8 @@ class Offer(models.Model):
     offerFile = models.FileField(upload_to='files', null=True, blank=True)
 
 
+
+
 class Order(models.Model):
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='order')
     delivery_date = models.DateField(null=True, blank=True)
@@ -96,3 +98,17 @@ class AccountsRecieveable(models.Model):
     status = models.CharField(max_length=20, null=True, blank=True)
     remarks = models.CharField(max_length=100, null=True, blank=True)
     totalInvoiceValue = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+
+from django.utils.timezone import now
+
+class OfferFilesPDF(models.Model):
+    offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='offerFileGeneration')
+    products = models.JSONField()
+    proposals = models.CharField(max_length=100, null=True, blank=True, default="")
+    reference = models.CharField(max_length=100, null=True, blank=True, default="")
+    date = models.DateField(default=now)
+    limitingDate = models.DateField(default=now)
+    vat = models.DecimalField(max_digits=4, default=0, decimal_places=2)
+    title = models.CharField(max_length=1000, default="")
+    customerEmployeePosition = models.CharField(max_length=1000, default="")
+    termsAndConditions = models.CharField(max_length=10000, default="")

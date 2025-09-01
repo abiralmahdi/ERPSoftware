@@ -8,7 +8,14 @@ from django.urls import reverse
 # Create your views here.
 def projects(request):
     project = Projects.objects.all().first()
-    return redirect("/wms/projects/"+str(project.id))
+    projects = Projects.objects.all()
+    employees = Employee.objects.all()
+    if project:
+        return redirect("/wms/projects/"+str(project.id))
+    else:
+        return render(request, "newProject.html", {"projects":projects, "indivProject":project, "employees":employees})
+
+
 from django.core.mail import EmailMultiAlternatives
 from django.urls import reverse
 from django.conf import settings

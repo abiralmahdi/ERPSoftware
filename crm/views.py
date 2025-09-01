@@ -412,6 +412,229 @@ def editOffer(request, offerID):
 
 
 
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
+from reportlab.lib.utils import ImageReader
+from io import BytesIO
+from django.http import HttpResponse
+from django.views.decorators.http import require_POST
+from datetime import datetime
+from django.shortcuts import get_object_or_404
+import json, os
+from num2words import num2words
+from PIL import Image
+from django.conf import settings
+
+@require_POST
+def generatePDF(request):
+    offer_id = request.POST.get('offer_id')
+    offer = get_object_or_404(Offer, id=offer_id)
+
+    # Get form data
+    proposals = request.POST.get('proposals', '')
+    reference = request.POST.get('reference', '')
+    limitingDate = request.POST.get('limitingDate', '')
+    title = request.POST.get('title', '')
+    customerEmployeePosition = request.POST.get('customerEmployeePosition', '')
+    termsAndConditions = request.POST.get('termsAndConditions', '')
+    vatPercentage = request.POST.get('vat', '')
+
+    products_json = request.POST.get('products_json', '[]')
+    try:
+        products_list = json.loads(products_json)
+    except json.JSONDecodeError:
+        products_list = []
+
+    # Save to DB
+    OfferFilesPDF.objects.create(
+        offer=offer,
+        proposals=proposals,
+        reference=reference,
+        limitingDate=limitingDate,
+        date=datetime.now().date(),
+        products=products_list,
+        title=title,
+        customerEmployeePosition=customerEmployeePosition,
+        termsAndConditions=termsAndConditions,
+        vat=float(vatPercentage)
+    )
+
+    # -------------------- PDF Generation --------------------
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=60, bottomMargin=50)
+    elements = []
+
+    styles = getSampleStyleSheet()
+    normal_style = styles['Normal']
+    bold_style = ParagraphStyle('bold', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=9)
+    table_header_style = ParagraphStyle(
+        'table_header',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=8,
+        alignment=TA_CENTER,
+        textColor=colors.whitesmoke  # White text for header
+    )
+    
+    table_cell_style = ParagraphStyle(
+        'table_cell',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        textColor=colors.black,
+        alignment=TA_LEFT
+    )
+
+    table_cell_center = ParagraphStyle(
+        'table_cell_center',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        textColor=colors.black,
+        alignment=TA_CENTER
+    )
+
+    table_cell_right = ParagraphStyle(
+        'table_cell_right',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        textColor=colors.black,
+        alignment=TA_RIGHT
+    )
+
+    # --- Header and Footer ---
+    def header_footer(canvas, doc):
+        try:
+            img_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'images', 'logo.jpg')
+            if os.path.exists(img_path):
+                img = Image.open(img_path).convert("RGB")
+                img_reader = ImageReader(img)
+                canvas.drawImage(img_reader, 20, A4[1] - 60, width=100, height=60, preserveAspectRatio=True)
+        except Exception as e:
+            print("Header image error:", e)
+
+        canvas.saveState()
+        canvas.setFont('Helvetica', 9)
+        canvas.drawString(30, 30, "Confidential")
+        canvas.drawCentredString(A4[0]/2, 30, "@Marks Automation Limited")
+        page_num = f"Page {canvas.getPageNumber()}"
+        canvas.drawRightString(A4[0]-30, 30, page_num)
+        canvas.restoreState()
+
+    # --- Top section table ---
+    try:
+        left_text = f"<b>To, <br/>{customerEmployeePosition}, <br/>{offer.lead.customer.name}, <br/>{offer.lead.customer.address}.</b><br/><br/><br/><br/>"
+    except:
+        left_text = f"<b>To, <br/>{customerEmployeePosition}, <br/>{offer.lead.customerVisit.customer.name}, <br/>{offer.lead.customerVisit.customer.address}.</b><br/><br/><br/><br/>"
+
+    right_text = f"<b>Proposal: {proposals}<br/>Reference: {reference}<br/>Date: {datetime.now().strftime('%Y-%m-%d')}<br/>Limiting Date: {limitingDate}</b>"
+
+    top_table_data = [
+        [Paragraph(left_text, normal_style), '', Paragraph(right_text, normal_style)]
+    ]
+    top_table = Table(top_table_data, colWidths=[170, 200, 170])
+    top_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('ALIGN', (2,0), (2,0), 'RIGHT')
+    ]))
+    elements.append(top_table)
+    elements.append(Spacer(1, 10))
+
+    # --- Title spanning full width ---
+    title_table = Table([[Paragraph(f"<b>{title}</b>", bold_style)]], colWidths=[540])
+    title_table.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE')
+    ]))
+    elements.append(title_table)
+    elements.append(Spacer(1, 20))
+
+    # --- Products table ---
+    if products_list:
+        headers = ['S/N', 'Product Name', 'Qty', 'Unit', 'Unit Price', 'Total']  # Added S/N
+        col_widths = [30, 180, 40, 80, 100, 100]
+        data = [[Paragraph(h, table_header_style) for h in headers]]
+
+        total_cost = 0
+        for idx, p in enumerate(products_list, start=1):
+            qty = float(p.get('quantity') or 0)
+            price = float(p.get('unit_price') or 0)
+            total = qty * price
+            total_cost += total
+            data.append([
+                Paragraph(str(idx), table_cell_center),          # Serial number
+                Paragraph(p.get('name',''), table_cell_style),
+                Paragraph(f"{qty:,.2f}", table_cell_center),     # Qty center
+                Paragraph(p.get('unit',''), table_cell_center),  # Unit center
+                Paragraph(f"{price:,.2f}", table_cell_right),    # Unit Price right
+                Paragraph(f"{total:,.2f}", table_cell_right)     # Total right
+            ])
+
+        # Summary rows under "Unit" column
+        vat = total_cost * float(vatPercentage)/100
+        total_with_vat = total_cost + vat
+        data.append(['', '', '', Paragraph('<b>Total:</b>', table_cell_style), '', Paragraph(f"<b>{total_cost:,.2f}</b>", table_cell_right)])
+        data.append(['', '', '', Paragraph(f"<b>VAT ({vatPercentage}%):</b>", table_cell_style), '', Paragraph(f"<b>{vat:,.2f}</b>", table_cell_right)])
+        data.append(['', '', '', Paragraph('<b>Total with VAT:</b>', table_cell_style), '', Paragraph(f"<b>{total_with_vat:,.2f}</b>", table_cell_right)])
+
+        table = Table(data, repeatRows=1, hAlign='CENTER', colWidths=col_widths)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.grey),   # Header background
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),  # Header text
+            ('ALIGN', (2,1), (3,-1), 'CENTER'),   # Qty & Unit center aligned
+            ('ALIGN', (4,1), (5,-1), 'RIGHT'),    # Unit Price & Total right aligned
+            ('GRID', (0,0), (-1,-1), 0.5, colors.grey),  # Grey grid for all cells
+            ('BOX', (0,0), (-1,-1), 0.5, colors.grey),   # Outer border grey
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ]))
+        elements.append(table)
+        elements.append(Spacer(1, 10))
+
+        # Total in words
+        total_in_words = num2words(total_with_vat, to='currency', lang='en').replace('euro','').replace('cents','').title()
+        elements.append(Paragraph(f" <b>Total in words (in BDT):{total_in_words}</b>", normal_style))
+        elements.append(Spacer(1, 20))
+
+    # --- Terms and conditions ---
+    elements.append(Paragraph("<br/><br/>Terms and Conditions:<br/><br/>", bold_style))
+    elements.append(Paragraph(termsAndConditions.replace('\n','<br/>'), normal_style))
+    elements.append(Spacer(1, 5))
+    elements.append(Paragraph('<br/><a href="www.marksautomation.com">Click here to see the detailed terms and conditions</a>', bold_style))
+    elements.append(Paragraph('<br/>On behalf of Marks Automation Limited.', bold_style))
+    
+    elements.append(Spacer(1, 50))
+
+    # --- Bottom left: user info ---
+    try:
+        employee = Employee.objects.get(user=request.user)
+        bottom_left_text = f"<b>{request.user.get_full_name()}<br/>{employee.designation.title} - {employee.department.name}</b>"
+    except Employee.DoesNotExist:
+        bottom_left_text = request.user.get_full_name()
+
+    bottom_table = Table([[Paragraph(bottom_left_text, normal_style), '']])
+    bottom_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'BOTTOM'),
+        ('ALIGN', (0,0), (0,0), 'LEFT')
+    ]))
+    elements.append(bottom_table)
+
+    # Build PDF
+    doc.build(elements, onFirstPage=header_footer, onLaterPages=header_footer)
+
+    # Return PDF response
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    filename = f"Offer_{offer.id}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+
+
 from django.db.models import Q
 from django.shortcuts import render
 from .models import Order, Customer, Employee, Lead

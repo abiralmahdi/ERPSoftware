@@ -9,7 +9,7 @@ class Projects(models.Model):
     endDate = models.DateField()
     status = models.CharField(max_length=50)
     createdAt = models.DateTimeField(auto_now_add=True)
-    projectLeader = models.ForeignKey(Employee, on_delete=models.DO_NOTHING, default='', null=True, blank=True)
+    projectLeader = models.ForeignKey(Employee, on_delete=models.DO_NOTHING, null=True, blank=True)
 
 class Task(models.Model):
     project = models.ForeignKey(Projects, on_delete=models.CASCADE)
