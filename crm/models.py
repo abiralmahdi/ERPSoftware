@@ -34,7 +34,7 @@ class CustomerVisits(models.Model):
 
     def __str__(self):
         return f"Visit to {self.customer.name} on {self.startDate}"
-    
+
 
 class Lead(models.Model):
     customerVisit = models.ForeignKey(CustomerVisits, on_delete=models.CASCADE, null=True, blank=True)
@@ -61,7 +61,6 @@ class Offer(models.Model):
     status = models.CharField(max_length=10, null=True, blank=True)
     note = models.CharField(max_length=100, null=True, blank=True)
     offerFile = models.FileField(upload_to='files', null=True, blank=True)
-
 
 
 

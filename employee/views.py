@@ -1,142 +1,173 @@
 from django.shortcuts import render, redirect
 from .models import *
+from django.http import HttpResponse
 from django.contrib.auth.models import User
 from .checkNewUser import sync_employees_from_zkteco
 from leave.models import LeaveApplications, VisitApplications
 from attendance.models import Attendance
 from core.models import GlobalConfig
 from crm.models import *
+from django.contrib.auth.decorators import login_required
 
+def homeRedirection(request):
+    if not request.user.is_anonymous:
+        userModel = Employee.objects.get(user=request.user)
+        if request.user.is_superuser or userModel.department.name == "HR" or userModel.department.name == "Human Resource":
+            return redirect('/employees/employeeList')
+        else:
+            return redirect('/employees/indivEmployee/'+str(request.user.employee.id))
+    else:
+        return redirect('/employees/login')
+    
 def scanNewEmployee(request):
     sync_employees_from_zkteco()
     return redirect('employee_list')
 
+@login_required(login_url='/employees/login')
 def employee_list(request):
-    globalConfig = GlobalConfig.objects.all().first()
-    employees = Employee.objects.select_related('user', 'department', 'designation')
-    departments = Department.objects.all()
-    designations = Designation.objects.all()
+    userModel = Employee.objects.get(user=request.user)
+    if request.user.is_superuser or userModel.designation.level == 2 or userModel.department.name == "HR" or userModel.department.name == "Human Resource":
+        globalConfig = GlobalConfig.objects.all().first()
+        employees = Employee.objects.select_related('user', 'department', 'designation')
+        departments = Department.objects.all()
+        designations = Designation.objects.all()
 
-    context = {
-        'employees': employees,
-        'departments': departments,
-        'designations': designations,
-        'globalConfig':globalConfig
-    }
-    return render(request, 'employeeList.html', context)
-
-
-def addEmployee(request):
-    if request.method == 'POST':
-        # Create user
-        first_name = request.POST['first_name']
-        last_name = request.POST['last_name']
-        username = request.POST['username']
-        email = request.POST['username']
-        password = request.POST['password']
-
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password,
-            first_name=first_name,
-            last_name=last_name
-        )
-
-        # Create employee
-        department_id = request.POST['department']
-        designation_id = request.POST['designation']
-        phone = request.POST['phone']
-        date_of_birth = request.POST['date_of_birth']
-        salary = request.POST['salary']
-        status = request.POST['status']
-        profile_picture = request.FILES.get('profile_picture')
-
-        Employee.objects.create(
-            user=user,
-            department_id=department_id,
-            designation_id=designation_id,
-            phone=phone,
-            date_of_birth=date_of_birth,
-            salary=salary,
-            status=status,
-            profile_picture=profile_picture,
-            password=password  # only if you really want it stored again
-        )
-
-        return redirect('employee_list')  # or wherever your list page is
-
-    return redirect('employee_list')
-
-
-
-def editEmployee(request, employeeID):
-    employee = get_object_or_404(Employee, id=employeeID)
-
-    if request.method == 'POST':
-        # Update user fields
-        user = employee.user
-        user.username = request.POST['email']
-        user.email = request.POST['email']  # same as username
-        if request.POST.get('password'):
-            user.set_password(request.POST['password'])  # Securely set new password
-        user.save()
-
-        # Update employee fields
-        employee.department = Department.objects.get(id=int(request.POST['department']))
-        employee.designation = Designation.objects.get(id=int(request.POST['designation']))
-        employee.phone = request.POST['phone']
-        employee.salary = request.POST['salary']
-        employee.status = request.POST['status']
-        profile_picture = request.FILES.get('profile_picture')
-
-        if profile_picture:
-            employee.profile_picture = profile_picture
-
-        if request.POST.get('password'):
-            employee.password = request.POST['password']  # Optional: if stored again
-
-        employee.save()
-
-        return redirect('/employees/indivEmployee/'+str(employee.id))  # or a detail page
-
-
-from django.db.models import Value, CharField
-from django.db.models.functions import Concat
-def getEmployee(request):
-    globalConfig = GlobalConfig.objects.all().first()
-    departments = Department.objects.all()
-    designations = Designation.objects.all()
-
-    if request.method == 'POST':
-        search_name = request.POST.get('employeeSearch', '').strip()
-
-        employees = Employee.objects.select_related('user', 'department', 'designation') \
-                .annotate(full_name=Concat('user__first_name', Value(' '), 'user__last_name', output_field=CharField())) \
-                .filter(full_name__icontains=search_name)
-
-        # Filter from GET parameters
-        department_id = request.POST.get('department')
-        designation_id = request.POST.get('designation')
-
-        if department_id:
-            employees = employees.filter(department_id=department_id)
-
-        if designation_id:
-            employees = employees.filter(designation_id=designation_id)
+        if not request.user.is_superuser and userModel.designation.level == 2:
+            employees = employees.filter(department=userModel.department)
 
         context = {
             'employees': employees,
             'departments': departments,
             'designations': designations,
-        'globalConfig':globalConfig
+            'globalConfig':globalConfig
         }
         return render(request, 'employeeList.html', context)
+    else:
+        return HttpResponse("You do not have permission to view the employee list.")
+
+@login_required(login_url='/employees/login')
+def addEmployee(request):
+    userModel = Employee.objects.get(user=request.user)
+    if request.user.is_superuser or userModel.department.name == "HR" or userModel.department.name == "Human Resource":
+        if request.method == 'POST':
+            # Create user
+            first_name = request.POST['first_name']
+            last_name = request.POST['last_name']
+            username = request.POST['username']
+            email = request.POST['username']
+            password = request.POST['password']
+
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name
+            )
+
+            # Create employee
+            department_id = request.POST['department']
+            designation_id = request.POST['designation']
+            phone = request.POST['phone']
+            date_of_birth = request.POST['date_of_birth']
+            salary = request.POST['salary']
+            status = request.POST['status']
+            profile_picture = request.FILES.get('profile_picture')
+
+            Employee.objects.create(
+                user=user,
+                department_id=department_id,
+                designation_id=designation_id,
+                phone=phone,
+                date_of_birth=date_of_birth,
+                salary=salary,
+                status=status,
+                profile_picture=profile_picture,
+                password=password  # only if you really want it stored again
+            )
+
+            return redirect('employee_list')  # or wherever your list page is
+
+        return redirect('employee_list')
+    else:
+        return HttpResponse("You do not have permission to add employees.")
+
+
+@login_required(login_url='/employees/login')
+def editEmployee(request, employeeID):
+    employee = get_object_or_404(Employee, id=employeeID)
+    userModel = Employee.objects.get(user=request.user)
+    if request.user.is_superuser or userModel.department.name == "HR" or userModel.department.name == "Human Resource":
+        if request.method == 'POST':
+            # Update user fields
+            user = employee.user
+            user.username = request.POST['email']
+            user.email = request.POST['email']  # same as username
+            if request.POST.get('password'):
+                user.set_password(request.POST['password'])  # Securely set new password
+            user.save()
+
+            # Update employee fields
+            employee.department = Department.objects.get(id=int(request.POST['department']))
+            employee.designation = Designation.objects.get(id=int(request.POST['designation']))
+            employee.phone = request.POST['phone']
+            employee.salary = request.POST['salary']
+            employee.status = request.POST['status']
+            profile_picture = request.FILES.get('profile_picture')
+
+            if profile_picture:
+                employee.profile_picture = profile_picture
+
+            if request.POST.get('password'):
+                employee.password = request.POST['password']  # Optional: if stored again
+
+            employee.save()
+
+            return redirect('/employees/indivEmployee/'+str(employee.id))  # or a detail page
+    else:
+        return HttpResponse("You do not have permission to edit employees.")
+
+
+from django.db.models import Value, CharField
+from django.db.models.functions import Concat
+@login_required(login_url='/employees/login')
+def getEmployee(request):
+    globalConfig = GlobalConfig.objects.all().first()
+    departments = Department.objects.all()
+    designations = Designation.objects.all()
+    userModel = Employee.objects.get(user=request.user)
+    if request.user.is_superuser or userModel.department.name == "HR" or userModel.department.name == "Human Resource" or userModel.designation.level == 2:
+        if request.method == 'POST':
+            search_name = request.POST.get('employeeSearch', '').strip()
+
+            employees = Employee.objects.select_related('user', 'department', 'designation') \
+                    .annotate(full_name=Concat('user__first_name', Value(' '), 'user__last_name', output_field=CharField())) \
+                    .filter(full_name__icontains=search_name)
+
+            # Filter from GET parameters
+            department_id = request.POST.get('department')
+            designation_id = request.POST.get('designation')
+
+            if department_id:
+                employees = employees.filter(department_id=department_id)
+
+            if designation_id:
+                employees = employees.filter(designation_id=designation_id)
+
+            context = {
+                'employees': employees,
+                'departments': departments,
+                'designations': designations,
+                'globalConfig':globalConfig
+            }
+            return render(request, 'employeeList.html', context)
+    else:
+        return HttpResponse("You do not have permission to search employees.")
     
 
 from datetime import date, timedelta
 from django.db.models import Q
-
+@login_required(login_url='/employees/login')
 def indivEmployee(request, employeeID):
     globalConfig = GlobalConfig.objects.all().first()
     employee = get_object_or_404(Employee, id=employeeID)
@@ -149,107 +180,134 @@ def indivEmployee(request, employeeID):
     attendance = Attendance.objects.filter(employee=employee)
     visits = VisitApplications.objects.filter(employee=employee)
     
-    # Get CustomerVisits related to the employee
-    customerVisitPlans = CustomerVisits.objects.filter(employee=employee)
+    userModel = Employee.objects.get(user=request.user)
+    if (
+        employee.user.id == request.user.id
+        or request.user.is_superuser
+        or (userModel.designation.level == 2 and userModel.department == employee.department)
+        or (userModel.department.name in ['HR', 'Human Resource'])
+    ):
+        # Get CustomerVisits related to the employee
+        customerVisitPlans = CustomerVisits.objects.filter(employee=employee)
 
-    # Leads as a marketer: full objects, not just IDs
-    leadsAsAMarketer = Lead.objects.filter(
-        Q(employee=employee) |
-        Q(customerVisit__in=CustomerVisits.objects.filter(employee=employee))
-    ).distinct()
+        # Leads as a marketer: full objects, not just IDs
+        leadsAsAMarketer = Lead.objects.filter(
+            Q(employee=employee) |
+            Q(customerVisit__in=CustomerVisits.objects.filter(employee=employee))
+        ).distinct()
 
-    # Offers and orders as marketer
-    offersAsAMarketer = Offer.objects.filter(lead__in=leadsAsAMarketer)
-    ordersAsAMarketer = Order.objects.filter(offer__in=offersAsAMarketer)
+        # Offers and orders as marketer
+        offersAsAMarketer = Offer.objects.filter(lead__in=leadsAsAMarketer)
+        ordersAsAMarketer = Order.objects.filter(offer__in=offersAsAMarketer)
 
-    # Leads as salesman: full objects
-    leadsAsASalesman = Lead.objects.filter(assignedTo=employee)
-    offersAsASalesman = Offer.objects.filter(lead__in=leadsAsASalesman)
-    ordersAsASalesman = Order.objects.filter(offer__in=offersAsASalesman)
+        # Leads as salesman: full objects
+        leadsAsASalesman = Lead.objects.filter(assignedTo=employee)
+        offersAsASalesman = Offer.objects.filter(lead__in=leadsAsASalesman)
+        ordersAsASalesman = Order.objects.filter(offer__in=offersAsASalesman)
 
 
-    today = date.today()
-    today_minus_30 = today - timedelta(days=30)
-    today_minus_365 = today - timedelta(days=365)
-    
+        today = date.today()
+        today_minus_30 = today - timedelta(days=30)
+        today_minus_365 = today - timedelta(days=365)
+        
 
-    # Example chart data (replace with actual data)
-    chart_data = {
-        "labels": ["Award", "Insurance", "Incentives", "Travel"],
-        "values": [2, 1, 3, 1]
-    }
+        # Example chart data (replace with actual data)
+        chart_data = {
+            "labels": ["Award", "Insurance", "Incentives", "Travel"],
+            "values": [2, 1, 3, 1]
+        }
 
-    return render(request, 'indivEmployee.html', {
-        'employee': employee,
-        'chart_data': chart_data, 
-        'designations':designations,
-        'departments': departments,
-        'lunchEnrollments': lunchEnrollments,
-        'carUsages':carUsages, 
-        'reimbursements':reimbursements,
-        'leave':leave,
-        'attendances':attendance.order_by('-date'),
-        'visits':visits,
-        'globalConfig':globalConfig,
-        'today':today,
-        'today_minus_30':today_minus_30,
-        'today_minus_365':today_minus_365,
-        'customerVisitPlans':customerVisitPlans,
-        'leadsAsAMarketer':leadsAsAMarketer,
-        'offersAsAMarketer':offersAsAMarketer,
-        'ordersAsAMarketer':ordersAsAMarketer,
-        'leadsAsASalesman':leadsAsASalesman,
-        'offersAsASalesman':offersAsASalesman,
-        'ordersAsASalesman':ordersAsASalesman,
+        return render(request, 'indivEmployee.html', {
+            'employee': employee,
+            'chart_data': chart_data, 
+            'designations':designations,
+            'departments': departments,
+            'lunchEnrollments': lunchEnrollments,
+            'carUsages':carUsages, 
+            'reimbursements':reimbursements,
+            'leave':leave,
+            'attendances':attendance.order_by('-date'),
+            'visits':visits,
+            'globalConfig':globalConfig,
+            'today':today,
+            'today_minus_30':today_minus_30,
+            'today_minus_365':today_minus_365,
+            'customerVisitPlans':customerVisitPlans,
+            'leadsAsAMarketer':leadsAsAMarketer,
+            'offersAsAMarketer':offersAsAMarketer,
+            'ordersAsAMarketer':ordersAsAMarketer,
+            'leadsAsASalesman':leadsAsASalesman,
+            'offersAsASalesman':offersAsASalesman,
+            'ordersAsASalesman':ordersAsASalesman,
 
-    })
+        })
+    else:
+        return HttpResponse("You do not have permission to view this employee's details.")
 
 
 def viewAwards(request):
-    globalConfig = GlobalConfig.objects.all().first()
-    awards = Award.objects.all()
-    employees = Employee.objects.all()
-    context = {
-        'awards': awards,
-        'employees':employees,
-        'globalConfig':globalConfig
-    }
-    return render(request, 'awards.html', context)
+    userModel = Employee.objects.get(user=request.user)
+    if request.user.is_superuser or userModel.designation.level == 2:
+        globalConfig = GlobalConfig.objects.all().first()
+        awards = Award.objects.all()
+        employees = Employee.objects.all()
 
+        if (userModel.designation.level == 2):
+            awards = awards.filter(employee__department=userModel.department)
+        context = {
+            'awards': awards,
+            'employees':employees,
+            'globalConfig':globalConfig
+        }
+        return render(request, 'awards.html', context)
+    else:
+        return HttpResponse("You do not have permission to view awards.")
+
+
+@login_required(login_url='/employees/login')
 def addAwards(request):
     globalConfig = GlobalConfig.objects.all().first()
-    if request.method == 'POST':
-        employee_id = request.POST['employee']
-        title = request.POST['title']
-        description = request.POST.get('description', '')
-        date_awarded = request.POST['date_awarded']
-        amount = request.POST['amount']
+    if request.user.is_superuser:
+        if request.method == 'POST':
+            employee_id = request.POST['employee']
+            title = request.POST['title']
+            description = request.POST.get('description', '')
+            date_awarded = request.POST['date_awarded']
+            amount = request.POST['amount']
 
-        employee = Employee.objects.get(id=employee_id)
+            employee = Employee.objects.get(id=employee_id)
 
-        Award.objects.create(
-            employee=employee,
-            title=title,
-            description=description,
-            date_awarded=date_awarded,
-            amount=amount
-        )
+            Award.objects.create(
+                employee=employee,
+                title=title,
+                description=description,
+                date_awarded=date_awarded,
+                amount=amount
+            )
 
-        return redirect('viewAwards') 
+            return redirect('viewAwards') 
 
-    return redirect('viewAwards')
+        return redirect('viewAwards')
+    else:
+        return HttpResponse("You do not have permission to add awards.")
 
-
+@login_required(login_url='/employees/login')
 def viewHealthInsurance(request):
-    globalConfig = GlobalConfig.objects.all().first()
-    health_insurances = HealthInsurance.objects.all()
-    employees = Employee.objects.all()
-    context = {
-        'insurances': health_insurances,
-        'employees': employees,
-        'globalConfig':globalConfig
-    }
-    return render(request, 'healthInsurance.html', context)
+    userModel = Employee.objects.get(user=request.user)
+    if request.user.is_superuser or userModel.designation.level == 2:
+        globalConfig = GlobalConfig.objects.all().first()
+        health_insurances = HealthInsurance.objects.all()
+        employees = Employee.objects.all()
+        if userModel.designation.level == 2:
+            health_insurances = health_insurances.filter(employee__department=userModel.department)
+        context = {
+            'insurances': health_insurances,
+            'employees': employees,
+            'globalConfig':globalConfig
+        }
+        return render(request, 'healthInsurance.html', context)
+    else:
+        return HttpResponse("You do not have permission to view health insurance.")
 
 
 from django.shortcuts import get_object_or_404
@@ -257,6 +315,7 @@ from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.utils.dateparse import parse_date
 @require_POST
+@login_required(login_url='/employees/login')
 def addHealthInsurance(request):
     try:
         employee_id = request.POST.get('employee')
@@ -279,41 +338,50 @@ def addHealthInsurance(request):
 
     return redirect('/employees/benefits/healthInsurance') 
 
-
+@login_required
 def viewCar(request):
     globalConfig = GlobalConfig.objects.all().first()
-    cars = Car.objects.all()
-    carAmenities = CarUsage.objects.all()
-    employees = Employee.objects.all()
-    context = {
-        'cars': cars,
-        'carUsage':carAmenities,
-        'employees': employees,
-        'globalConfig':globalConfig
-    }
-    return render(request, 'car.html', context)
+    userModel = Employee.objects.get(user=request.user)
+    if request.user.is_superuser or (userModel.department.name == "Administration" or userModel.department.name == "Admin" ):
+        cars = Car.objects.all()
+        carAmenities = CarUsage.objects.all()
+        employees = Employee.objects.all()
+        context = {
+            'cars': cars,
+            'carUsage':carAmenities,
+            'employees': employees,
+            'globalConfig':globalConfig
+        }
+        return render(request, 'car.html', context)
+    else:
+        return HttpResponse("You do not have permission to view cars.")
 
-
+@login_required(login_url='/employees/login')
 def addCar(request):
-    if request.method == 'POST':
-        carModel = request.POST['carModel']
-        number = request.POST['carNumber']
-        inclusionDate = request.POST['inclusionDate']
-        fuelReimbursement = request.POST['fuelReimbursement']
+    if request.user.is_superuser:
+        if request.method == 'POST':
+            carModel = request.POST['carModel']
+            number = request.POST['carNumber']
+            inclusionDate = request.POST['inclusionDate']
+            fuelReimbursement = request.POST['fuelReimbursement']
 
-        Car.objects.create(
-            carModel=carModel,
-            number=number,
-            inclusionDate=inclusionDate,
-            fuelReimbursement=fuelReimbursement,
+            Car.objects.create(
+                carModel=carModel,
+                number=number,
+                inclusionDate=inclusionDate,
+                fuelReimbursement=fuelReimbursement,
 
-        )
+            )
+
+            return redirect('/employees/benefits/viewCars')
 
         return redirect('/employees/benefits/viewCars')
+    else:
+        return HttpResponse("You do not have permission to add cars.")
 
-    return redirect('/employees/benefits/viewCars')
-
+@login_required(login_url='/employees/login')
 def addCarAmenity(request):
+    userModel = Employee.objects.get(user=request.user)
     if request.method == 'POST':
         carID = request.POST['car']
         car = Car.objects.get(id=carID)
@@ -327,216 +395,292 @@ def addCarAmenity(request):
         distance_covered = request.POST['distance']
         purpose = request.POST['purpose']
 
-        CarUsage.objects.create(car=car, employee=employee, usage_date=date, distance_covered=distance_covered, purpose=purpose, 
-                                startTime=startingTime, endTime=endingTime, origin=origin, destination=destination)
+        if (
+            request.user.is_superuser
+            or (userModel.designation.level == 2 and userModel.department == employee.department)
+            or userModel.department.name in ["Admin", "Administration"]
+        ):
+            CarUsage.objects.create(car=car, employee=employee, usage_date=date, distance_covered=distance_covered, purpose=purpose, 
+                                    startTime=startingTime, endTime=endingTime, origin=origin, destination=destination)
+        else:
+            return HttpResponse("You are not allowed to issue car facilities.")
 
         return redirect('/employees/benefits/viewCars')
 
     return redirect('/employees/benefits/viewCars')
 
 
+@login_required(login_url='/employees/login')
 def viewMobile(request):
-    globalConfig = GlobalConfig.objects.all().first()
-    mobiles = Mobile.objects.all()
-    employees = Employee.objects.all()
-    context = {
-        'mobiles':mobiles,
-        'employees': employees,
-        'globalConfig':globalConfig
-    }
-    return render(request, 'mobile.html', context)
+    userModel = Employee.objects.get(user=request.user)
+    if (
+            request.user.is_superuser or
+            userModel.department.name == "Administration" or 
+            userModel.department.name == "Admin" or 
+            userModel.designation.level == 2  or 
+            userModel.department.name == "HR" or 
+            userModel.department.name == "Human Resource"
+        ):
+        globalConfig = GlobalConfig.objects.all().first()
+        mobiles = Mobile.objects.all()
+        employees = Employee.objects.all()
+        if userModel.designation.level == 2:
+            mobiles = mobiles.filter(employee__department=userModel.department)
+        context = {
+            'mobiles':mobiles,
+            'employees': employees,
+            'globalConfig':globalConfig
+        }
+        return render(request, 'mobile.html', context)
+    else:
+        return HttpResponse("You do not have permission to view mobile benefits.")
 
-
+@login_required(login_url='/employees/login')
 def addMobile(request):
-    if request.method == 'POST':
-        employeeID = request.POST['employee']
-        mobileModel = request.POST['mobileModel']
-        amount = request.POST['amount']
-        voucher = request.FILES.get('voucher')
+    userModel = Employee.objects.get(user=request.user)
+    if request.user.is_superuser:
+        if request.method == 'POST':
+            employeeID = request.POST['employee']
+            mobileModel = request.POST['mobileModel']
+            amount = request.POST['amount']
+            voucher = request.FILES.get('voucher')
 
-        employee = Employee.objects.get(id=employeeID)
+            employee = Employee.objects.get(id=employeeID)
 
-        Mobile.objects.create(
-            employee=employee,
-            mobileModel=mobileModel,
-            amount = amount,
-            file=voucher
-        )
+            if (userModel.designation.level == 2 and (userModel.department.name == "Admin" or userModel.department.name == "Administration")) or request.user.is_superuser:
+                Mobile.objects.create(
+                    employee=employee,
+                    mobileModel=mobileModel,
+                    amount = amount,
+                    file=voucher
+                )
+                return redirect('/employees/benefits/viewMobile')  # or wherever your list page is
+            else:
+                return HttpResponse("You do not have permission to add mobile benefits for this employee.")
 
-        return redirect('/employees/benefits/viewMobile')  # or wherever your list page is
+        return redirect('/employees/benefits/viewMobile')
+    else:
+        return HttpResponse("You do not have permission to add mobile benefits.")
 
-    return redirect('/employees/benefits/viewMobile')
 
-
+@login_required(login_url='/employees/login')
 def viewAccomodation(request):
-    globalConfig = GlobalConfig.objects.all().first()
-    accomodations = Accomodation.objects.all()
-    employees = Employee.objects.all()
-    context = {
-        'accomodations': accomodations,
-        'employees': employees,
-        'globalConfig':globalConfig
-    }
-    return render(request, 'accomodation.html', context)
+    userModel = Employee.objects.get(user=request.user)
+    if request.user.is_superuser or userModel.designation.level == 2 or userModel.department.name in ["HR", "Human Resource", "Admin", "Administration"]:
+        globalConfig = GlobalConfig.objects.all().first()
+        accomodations = Accomodation.objects.all()
+        employees = Employee.objects.all()
+        
+        if userModel.designation.level == 2:
+            accomodations = accomodations.filter(employee__department=userModel.department)
+        context = {
+            'accomodations': accomodations,
+            'employees': employees,
+            'globalConfig':globalConfig
+        }
+        return render(request, 'accomodation.html', context)
+    else:
+        return HttpResponse("You are not allowed to view accomodations")
 
+@login_required(login_url='/employees/login')
 def addAccomodation(request):
-    if request.method == 'POST':
-        employeeID = request.POST['employee']
-        reimbursement = request.POST['reimbursement']
-        voucher = request.FILES.get('voucher')
+    userModel = Employee.objects.get(user=request.user)
+    
+    if (
+        request.user.is_superuser
+        or userModel.department.name in ['Admin', 'Administration']
+    ):
+        if request.method == 'POST':
+            employeeID = request.POST['employee']
+            reimbursement = request.POST['reimbursement']
+            voucher = request.FILES.get('voucher')
 
-        employee = Employee.objects.get(id=employeeID)
+            employee = Employee.objects.get(id=employeeID)
 
-        Accomodation.objects.create(
-            employee=employee,
-            reimbursement=reimbursement,
-            file=voucher
-        )
+            if (userModel.department == employee.department and userModel.designation.level == 2) or request.user.is_superuser or userModel.department.name == 'Admin' or userModel.department.name == 'Administration':
+                Accomodation.objects.create(
+                    employee=employee,
+                    reimbursement=reimbursement,
+                    file=voucher
+                )
 
-        return redirect('/employees/benefits/viewAccomodation')  # or wherever your list page is
+                return redirect('/employees/benefits/viewAccomodation')  # or wherever your list page is
+            else:
+                return HttpResponse("You do not have permission to add accomodation benefits for this employee.")
 
-    return redirect('/employees/benefits/viewAccomodation')
+        return redirect('/employees/benefits/viewAccomodation')
+    else:
+        return HttpResponse("You do not have permission to add accomodation benefits.")
 
 
+@login_required(login_url='/employees/login')
 def viewTravelAllowance(request):
-    globalConfig = GlobalConfig.objects.all().first()
-    travel_allowances = TravelAllowance.objects.all()
-    employees = Employee.objects.all()
-    context = {
-        'allowances': travel_allowances,
-        'employees': employees,
-        'globalConfig':globalConfig
-    }
-    return render(request, 'travelAllowance.html', context)
+    userModel = Employee.objects.get(user=request.user)
+    if request.user.is_superuser or userModel.designation.level == 2 or userModel.department.name in ["HR", "Human Resource", "Admin", "Administration"]:
+        globalConfig = GlobalConfig.objects.all().first()
+        travel_allowances = TravelAllowance.objects.all()
+        employees = Employee.objects.all()
+        if userModel.designation.level == 2:
+            travel_allowances = travel_allowances.filter(employee__department=userModel.department)
+        context = {
+            'allowances': travel_allowances,
+            'employees': employees,
+            'globalConfig':globalConfig
+        }
+        return render(request, 'travelAllowance.html', context)
+    else:
+        return HttpResponse("You do not have permission to view travel allowances.")
 
+@login_required(login_url='/employees/login')
 def addTravelAllowance(request):
-    if request.method == 'POST':
-        employeeID = request.POST['employee']
-        amount = request.POST['amount']
+    userModel = Employee.objects.get(user=request.user)
+    if request.user.is_superuser or userModel.department.name in ["HR", "Human Resource", "Admin", "Administration"]:
+        if request.method == 'POST':
+            employeeID = request.POST['employee']
+            amount = request.POST['amount']
 
-        employee = Employee.objects.get(id=employeeID)
+            employee = Employee.objects.get(id=employeeID)
+            
+            if (userModel.department.name in ["HR", "Human Resource", "Admin", "Administration"]) or request.user.is_superuser:    
+                TravelAllowance.objects.create(
+                    employee=employee,
+                    amount=amount
+                )
 
-        TravelAllowance.objects.create(
-            employee=employee,
-            amount=amount
-        )
+                return redirect('/employees/benefits/viewTravelAllowance')  # or wherever your list page is
+            else:
+                return HttpResponse("You do not have permission to add travel allowance for this employee.")
 
-        return redirect('/employees/benefits/viewTravelAllowance')  # or wherever your list page is
-
-    return redirect('/employees/benefits/viewTravelAllowance')
+        return redirect('/employees/benefits/viewTravelAllowance')
 
 
-
+@login_required(login_url='/employees/login')
 def departments(request):
     globalConfig = GlobalConfig.objects.all().first()
-    if request.method == 'POST':
-        # Check which form was submitted
-        if 'deptName' in request.POST:
-            dept_name = request.POST.get('deptName')
-            if dept_name:
-                Department.objects.create(name=dept_name)
-                messages.success(request, "Department added successfully.")
+    userModel = Employee.objects.get(user=request.user)
+    if request.user.is_superuser or (userModel.department.name in ['HR', 'Human Resource']):
+        if request.method == 'POST':
+            # Check which form was submitted
+            if 'deptName' in request.POST:
+                dept_name = request.POST.get('deptName')
+                if dept_name:
+                    Department.objects.create(name=dept_name)
+                    messages.success(request, "Department added successfully.")
 
-        elif 'title' in request.POST:
-            designation_name = request.POST.get('title')
-            if designation_name:
-                Designation.objects.create(title=designation_name)
-                messages.success(request, "Designation added successfully.")
+            elif 'title' in request.POST:
+                designation_name = request.POST.get('title')
+                if designation_name:
+                    Designation.objects.create(title=designation_name)
+                    messages.success(request, "Designation added successfully.")
 
-        return redirect('/employees/departments')
+            return redirect('/employees/departments')
 
-    departments = Department.objects.all()
-    designations = Designation.objects.all()
-    return render(request, 'departments.html', {
-        'departments': departments,
-        'designations': designations,
-        'globalConfig':globalConfig
-    })
+        departments = Department.objects.all()
+        designations = Designation.objects.all()
+        return render(request, 'departments.html', {
+            'departments': departments,
+            'designations': designations,
+            'globalConfig':globalConfig
+        })
+    else:
+        return HttpResponse("You do not have permission to manage departments.")
 
 from datetime import datetime
+@login_required(login_url='/employees/login')
 def viewFoodAndMeals(request):
-    globalConfig = GlobalConfig.objects.all().first()
-    date_str = request.GET.get('date')
-    selected_date = None
+    userModel = Employee.objects.get(user=request.user)
+    if request.user.is_superuser or userModel.department.name in ['Admin', 'Administration']:
+        globalConfig = GlobalConfig.objects.all().first()
+        date_str = request.GET.get('date')
+        selected_date = None
 
-    if date_str:
-        try:
-            selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-            enrollments = LunchEnrollment.objects.filter(enrolled_on__date=selected_date, is_active=True)
-        except ValueError:
+        if date_str:
+            try:
+                selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                enrollments = LunchEnrollment.objects.filter(enrolled_on__date=selected_date, is_active=True)
+            except ValueError:
+                enrollments = LunchEnrollment.objects.filter(is_active=True)
+        else:
             enrollments = LunchEnrollment.objects.filter(is_active=True)
+
+        employees = Employee.objects.select_related('user', 'department')
+
+        return render(request, 'food.html', {
+            'enrollments': enrollments.select_related('employee__user', 'employee__department'),
+            'employees': employees,
+            'selected_date': date_str,
+            'globalConfig':globalConfig
+        })
     else:
-        enrollments = LunchEnrollment.objects.filter(is_active=True)
-
-    employees = Employee.objects.select_related('user', 'department')
-
-    return render(request, 'food.html', {
-        'enrollments': enrollments.select_related('employee__user', 'employee__department'),
-        'employees': employees,
-        'selected_date': date_str,
-        'globalConfig':globalConfig
-    })
+        return HttpResponse("You do not have permission to view food and meals.")
 
 
-
+@login_required(login_url='/employees/login')
 def add_lunch_enrollment(request):
-    if request.method == 'POST':
-        employee_id = request.POST.get('employee_id')
-        if employee_id:
-            employee = Employee.objects.get(id=employee_id)
+    userModel = Employee.objects.get(user=request.user)
+    if request.user.is_superuser or userModel.designation.name in ['Admin', 'Administration']:
+        if request.method == 'POST':
+            employee_id = request.POST.get('employee_id')
+            if employee_id:
+                employee = Employee.objects.get(id=employee_id)
 
-            # Prevent duplicate active enrollments
-            if LunchEnrollment.objects.filter(employee=employee, is_active=True).exists():
-                messages.warning(request, f"{employee.user.get_full_name()} is already enrolled.")
-            else:
-                LunchEnrollment.objects.create(employee=employee)
-                messages.success(request, f"{employee.user.get_full_name()} enrolled for lunch successfully.")
-        return redirect('/employees/benefits/viewFoodAndMeals')
+                # Prevent duplicate active enrollments
+                if LunchEnrollment.objects.filter(employee=employee, is_active=True).exists():
+                    messages.warning(request, f"{employee.user.get_full_name()} is already enrolled.")
+                else:
+                    LunchEnrollment.objects.create(employee=employee)
+                    messages.success(request, f"{employee.user.get_full_name()} enrolled for lunch successfully.")
+            return redirect('/employees/benefits/viewFoodAndMeals')
+    else:
+        return HttpResponse("You do not have permission to add lunch enrollments.")
     
 
 def reimbursement_requests(request):
-    globalConfig = GlobalConfig.objects.all().first()
-    user = request.user
-    employee = Employee.objects.get(user=user)
+    if request.user.is_superuser or request.user.employee.department.name == 'Commercial' or request.user.employee.designation.level == 2:
+        globalConfig = GlobalConfig.objects.all().first()
+        user = request.user
+        employee = Employee.objects.get(user=user)
 
-    if request.user.is_superuser or request.user.employee.department.name == 'Commercial':
-        reimbursementsAll = Reimbursements.objects.all()
-    elif request.user.employee.designation.level == 2:
-        reimbursementsAll = Reimbursements.objects.filter(employee__department=employee.department)
+        if request.user.is_superuser or request.user.employee.department.name == 'Commercial':
+            reimbursementsAll = Reimbursements.objects.all()
+        elif request.user.employee.designation.level == 2:
+            reimbursementsAll = Reimbursements.objects.filter(employee__department=employee.department)
+        else:
+            reimbursementsAll = Reimbursements.objects.filter(employee=employee)
+
+        # Handle form submission
+        if request.method == "POST":
+            reason = request.POST.get("reason")
+            source = request.POST.get("source")
+            amount = request.POST.get("amount")
+            remarks = request.POST.get("remarks")
+            voucher = request.FILES.get("voucher")
+
+            Reimbursements.objects.create(
+                employee=employee,
+                reason=reason,
+                purchasedFrom=source,
+                amount=amount,
+                remarks=remarks,
+                file=voucher
+            )
+            return redirect("/employees/reimbursementRequests")  # replace with your URL name
+
+        # Handle GET (listing with optional date filtering)
+        selected_date = request.GET.get("date")
+        if selected_date:
+            reimbursements = reimbursementsAll.filter(dateRequested=selected_date)
+        else:
+            reimbursements = reimbursementsAll
+
+        context = {
+            "reimbursements": reimbursements.order_by('-dateRequested'),
+            "selected_date": selected_date,
+            'globalConfig':globalConfig
+        }
+        return render(request, "reimbursement.html", context)
     else:
-        reimbursementsAll = Reimbursements.objects.filter(employee=employee)
-
-    # Handle form submission
-    if request.method == "POST":
-        reason = request.POST.get("reason")
-        source = request.POST.get("source")
-        amount = request.POST.get("amount")
-        remarks = request.POST.get("remarks")
-        voucher = request.FILES.get("voucher")
-
-        Reimbursements.objects.create(
-            employee=employee,
-            reason=reason,
-            purchasedFrom=source,
-            amount=amount,
-            remarks=remarks,
-            file=voucher
-        )
-        return redirect("/employees/reimbursementRequests")  # replace with your URL name
-
-    # Handle GET (listing with optional date filtering)
-    selected_date = request.GET.get("date")
-    if selected_date:
-        reimbursements = reimbursementsAll.filter(dateRequested=selected_date)
-    else:
-        reimbursements = reimbursementsAll
-
-    context = {
-        "reimbursements": reimbursements.order_by('-dateRequested'),
-        "selected_date": selected_date,
-        'globalConfig':globalConfig
-    }
-    return render(request, "reimbursement.html", context)
+        return HttpResponse("You do not have permission to view reimbursement requests.")
 
 
 
@@ -585,7 +729,7 @@ def login_(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect('/employees') 
+            return redirect('/') 
         else:
             messages.error(request, "Invalid username or password.")
     

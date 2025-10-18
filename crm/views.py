@@ -5,7 +5,10 @@ from django.db.models import Q
 from django.utils.dateparse import parse_date
 from django.db.models import Q
 from django.utils.dateparse import parse_date
+from django.contrib.auth.decorators import login_required
 
+
+@login_required(login_url='/employees/login')
 def customerVisitPlan(request):
     # Pre-fetch related for efficiency
     customers = Customer.objects.all().prefetch_related('agent')
@@ -15,6 +18,10 @@ def customerVisitPlan(request):
         'customer',
         'agent'
     ).all()
+
+    userModel = Employee.objects.get(user=request.user)
+    if not request.user.is_superuser:
+        customerVisits = customerVisits.filter(employee=userModel)
 
     # --- GET filters ---
     search_query = request.GET.get("employeeSearch", "").strip()
@@ -48,7 +55,7 @@ def customerVisitPlan(request):
     }
     return render(request, 'customerVisitPlan.html', context)
 
-
+@login_required(login_url='/employees/login')
 def addCustomer(request):
     if request.method == 'POST':
         name = request.POST['name']
@@ -62,7 +69,7 @@ from django.utils import timezone
 from django.shortcuts import redirect, get_object_or_404
 from django.core.files.base import ContentFile
 import base64
-
+@login_required(login_url='/employees/login')
 def addCustomerVisit(request):
     if request.method == 'POST':
         visitTo = request.POST['visitTo']
@@ -118,7 +125,7 @@ def addCustomerVisit(request):
         return redirect('/crm/customerVisitPlan')
 
 
-    
+@login_required(login_url='/employees/login') 
 def completeVisit(request, visitID):
     visit = CustomerVisits.objects.get(id=int(visitID))
 
@@ -139,7 +146,7 @@ def completeVisit(request, visitID):
     return render(request, 'crm/complete_visit.html', {'application': visit})
 
 
-
+@login_required(login_url='/employees/login')
 def addContactPerson(reqeust):
     if reqeust.method == 'POST':
         customer = reqeust.POST['customer']
@@ -151,7 +158,8 @@ def addContactPerson(reqeust):
         contactPerson.save()
 
         return redirect('/crm/customerList')
-
+    
+@login_required(login_url='/employees/login')
 def customerList(request):
     contactPersons = CustomerAgent.objects.all()
     customers = Customer.objects.all()
@@ -162,8 +170,9 @@ def customerList(request):
     return render(request, 'customerList.html', context)
 
 
-
+@login_required(login_url='/employees/login')
 def lead(request):
+    userModel = Employee.objects.get(user=request.user)
     if request.method == "POST":
         customer_id = request.POST.get("customer")
         agent_id = request.POST.get("agent")
@@ -194,6 +203,9 @@ def lead(request):
         "customer",
         "agent",
     ).all().prefetch_related('offer')
+
+    if not request.user.is_superuser:
+        leads = leads.filter(Q(employee=userModel) | Q(assignedTo=userModel))
 
     search_query = request.GET.get("search", "").strip()
     status_filter = request.GET.get("status", "")
@@ -241,6 +253,8 @@ def lead(request):
     }
     return render(request, "leads.html", context)
 
+
+@login_required(login_url='/employees/login')
 def addLead(request, visit_id):
     customer_visit = get_object_or_404(CustomerVisits, id=visit_id)
 
@@ -249,7 +263,7 @@ def addLead(request, visit_id):
     
     return redirect("/crm/lead")  # change to your detail view
 
-
+@login_required(login_url='/employees/login')
 def completeLead(request, leadID):
     lead = Lead.objects.get(id=leadID)
     if request.method == 'POST':
@@ -272,7 +286,7 @@ def completeLead(request, leadID):
 
 
 
-
+@login_required(login_url='/employees/login')
 def addLeadSeperately(request):
     if request.method == "POST":
         customer_id = request.POST.get("customer")
@@ -297,8 +311,9 @@ def addLeadSeperately(request):
     return redirect('/crm/lead')
 
 
-
+@login_required(login_url='/employees/login')
 def offer(request):
+    userModel = Employee.objects.get(user=request.user)
     offers = Offer.objects.select_related(
         'lead', 
         'lead__customer', 
@@ -310,6 +325,9 @@ def offer(request):
         'lead__customerVisit__agent', 
         'lead__customerVisit__employee'
     ).all()
+    
+    if not request.user.is_superuser:
+        offers = offers.filter(Q(lead__employee=userModel) | Q(lead__assignedTo=userModel))
 
     # --- Filtering ---
     search_query = request.GET.get('search', '').strip()
@@ -364,13 +382,14 @@ def offer(request):
     return render(request, 'offers.html', context)
 
 # Offer status: Submitted, In Progress, Pending
+@login_required(login_url='/employees/login')
 def addOffer(request, leadID):
     lead = Lead.objects.get(id=leadID)
     offer = Offer.objects.get_or_create(lead=lead, offer_date=lead.offerSubmissionDate)
 
     return redirect("/crm/offers")
 
-
+@login_required(login_url='/employees/login')
 def editOffer(request, offerID):
     offer = get_object_or_404(Offer, id=offerID)
 
@@ -429,6 +448,7 @@ from PIL import Image
 from django.conf import settings
 
 @require_POST
+@login_required(login_url='/employees/login')
 def generatePDF(request):
     offer_id = request.POST.get('offer_id')
     offer = get_object_or_404(Offer, id=offer_id)
@@ -639,9 +659,16 @@ from django.db.models import Q
 from django.shortcuts import render
 from .models import Order, Customer, Employee, Lead
 from datetime import date
-
+@login_required(login_url='/employees/login')
 def orders(request):
+    userModel = Employee.objects.get(user=request.user)
     orders_qs = Order.objects.select_related('offer', 'offer__lead').all()
+    if not request.user.is_superuser:
+        orders_qs = orders_qs.filter(
+            Q(offer__lead__employee=userModel) |
+            Q(offer__lead__assignedTo=userModel) |
+            Q(offer__lead__customerVisit__employee=userModel)
+        )
 
     # GET params
     search = request.GET.get('search', '').strip()
@@ -705,7 +732,7 @@ def orders(request):
     }
     return render(request, "order.html", context)
 
-
+@login_required(login_url='/employees/login')
 def addOrder(request, offerID):
     offer = Offer.objects.get(id=offerID)
     if offer.status == "Win":
@@ -714,7 +741,7 @@ def addOrder(request, offerID):
     return redirect("/crm/orders")
 
 
-
+@login_required(login_url='/employees/login')
 def editOrder(request, order_id):
     order = get_object_or_404(Order, id=order_id)
 
@@ -746,8 +773,9 @@ def editOrder(request, order_id):
 from django.db.models import Q
 from django.shortcuts import render
 from .models import Sales, Customer
-
+@login_required(login_url='/employees/login')
 def sales(request):
+    userModel = Employee.objects.get(user=request.user)
     # Base queryset with related fields to minimize queries
     sales_qs = Sales.objects.select_related(
         'order',
@@ -756,6 +784,13 @@ def sales(request):
         'order__offer__lead__customer',
         'order__offer__lead__customerVisit'
     ).all()
+
+    if not request.user.is_superuser:
+        sales_qs = sales_qs.filter(
+            Q(order__offer__lead__employee=userModel) |
+            Q(order__offer__lead__assignedTo=userModel) |
+            Q(order__offer__lead__customerVisit__employee=userModel)
+        )
 
     # --- Get filter parameters from GET ---
     invoiceRef = request.GET.get("invoiceRef", "").strip()
@@ -844,7 +879,7 @@ def sales(request):
     }
     return render(request, "sales.html", context)
 
-
+@login_required(login_url='/employees/login')
 def editSale(request, saleID):
     sale = get_object_or_404(Sales, id=saleID)
 
@@ -866,12 +901,19 @@ def editSale(request, saleID):
         return redirect("/crm/sales")
 
 
-
+@login_required(login_url='/employees/login')
 def accountsRecieveable(request):
+    userModel = Employee.objects.get(user=request.user)
     ar_qs = AccountsRecieveable.objects.select_related('sales', 'sales__order', 'sales__order__offer', 
                                                        'sales__order__offer__lead', 
                                                        'sales__order__offer__lead__customer').all()
 
+    if not request.user.is_superuser:
+        ar_qs = ar_qs.filter(
+            Q(sales__order__offer__lead__employee=userModel) |
+            Q(sales__order__offer__lead__assignedTo=userModel) |
+            Q(sales__order__offer__lead__customerVisit__employee=userModel)
+        )
     # --- Filtering ---
     poRef = request.GET.get('poRef')
     invoiceRef = request.GET.get('invoiceRef')
@@ -961,7 +1003,7 @@ def accountsRecieveable(request):
 
 
 from django.utils.dateparse import parse_date
-
+@login_required(login_url='/employees/login')
 def updateAccountsRecieveable(request, pk):
     ar = get_object_or_404(AccountsRecieveable, pk=pk)
 
@@ -1007,7 +1049,7 @@ from django.http import JsonResponse
 from datetime import datetime, timedelta
 from .models import CustomerVisits, Lead, Offer, Order
 from employee.models import Employee
-
+@login_required(login_url='/employees/login')
 def employeeWeeklyStatus(request, employee_id):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')

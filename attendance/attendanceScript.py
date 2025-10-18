@@ -53,7 +53,7 @@ for att in all_attendances:
 # ---------- Process attendance ----------
 print("🛠️ Processing attendance data...")
 Attendance.objects.all().delete()
-employees = Employee.objects.all()
+employees = Employee.objects.filter(status="Active")
 
 for emp in employees:
     # Normalize: user_id may be str or int

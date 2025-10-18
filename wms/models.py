@@ -12,7 +12,7 @@ class Projects(models.Model):
     projectLeader = models.ForeignKey(Employee, on_delete=models.DO_NOTHING, null=True, blank=True)
 
 class Task(models.Model):
-    project = models.ForeignKey(Projects, on_delete=models.CASCADE)
+    project = models.ForeignKey(Projects, on_delete=models.CASCADE, related_name='tasks')
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     assignedTo = models.ForeignKey(Employee, on_delete=models.DO_NOTHING)

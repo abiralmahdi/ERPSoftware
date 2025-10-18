@@ -3,7 +3,7 @@ from employee.models import *
 
 # Create your models here.
 class Attendance(models.Model):
-    employee = models.ForeignKey(Employee, on_delete=models.PROTECT)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=False)
     inTime = models.TimeField(auto_now_add=False, null=True, blank=True)
     outTime = models.TimeField(null=True, blank=True)
