@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('attendanceList', views.attendanceList, name='attendanceList'),
+    path('scanAttendance', views.scanAttendance, name='scanAttendance'),
     path('remoteAttendance', views.remoteAttendance, name='remoteAttendance'),
     path("submitAttendance", views.submitAttendance, name="submitAttendance"),
     path("outTime/<str:attendanceID>", views.outTime, name="outTime"),

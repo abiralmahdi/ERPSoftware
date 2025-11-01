@@ -164,6 +164,11 @@ def get_quickview(request):
 
 
 
+from .attendanceScript import process_attendance_last_3_months
+def scanAttendance(request):
+    process_attendance_last_3_months()
+    return redirect('/attendance/attendanceDashboard')
+
 
 from django.http import JsonResponse
 from django.utils.dateparse import parse_date
