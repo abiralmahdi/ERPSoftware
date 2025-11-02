@@ -97,35 +97,53 @@ def addEmployee(request):
 def editEmployee(request, employeeID):
     employee = get_object_or_404(Employee, id=employeeID)
     userModel = Employee.objects.get(user=request.user)
-    if request.user.is_superuser or userModel.department.name == "HR" or userModel.department.name == "Human Resource":
-        if request.method == 'POST':
-            # Update user fields
+    can_edit_details = (
+        request.user.is_superuser or
+        userModel.department.name in ["HR", "Human Resource"]
+    )
+    can_change_password = (employee.user == request.user)
+
+    if request.method == 'POST':
+        # Check if editing password only by employee himself
+        if can_change_password and not can_edit_details:
+            # Allow only password change for own user
             user = employee.user
-            user.username = request.POST['email']
-            user.email = request.POST['email']  # same as username
             if request.POST.get('password'):
                 user.set_password(request.POST['password'])  # Securely set new password
+                user.save()
+                # Optionally update password field in Employee model if it stores raw password (not recommended)
+                employee.password = request.POST['password']
+                employee.save()
+            return redirect('/employees/indivEmployee/' + str(employee.id))
+
+        # Check if HR, Human Resource, or superuser is editing details
+        elif can_edit_details:
+            user = employee.user
+            user.username = request.POST['email']
+            user.email = request.POST['email']
+            if request.POST.get('password'):
+                user.set_password(request.POST['password'])
             user.save()
 
-            # Update employee fields
             employee.department = Department.objects.get(id=int(request.POST['department']))
             employee.designation = Designation.objects.get(id=int(request.POST['designation']))
             employee.phone = request.POST['phone']
             employee.salary = request.POST['salary']
             employee.status = request.POST['status']
             profile_picture = request.FILES.get('profile_picture')
-
             if profile_picture:
                 employee.profile_picture = profile_picture
-
             if request.POST.get('password'):
-                employee.password = request.POST['password']  # Optional: if stored again
-
+                employee.password = request.POST['password']
             employee.save()
+            return redirect('/employees/indivEmployee/' + str(employee.id))
 
-            return redirect('/employees/indivEmployee/'+str(employee.id))  # or a detail page
+        else:
+            return HttpResponse("You do not have permission to edit employees.")
     else:
-        return HttpResponse("You do not have permission to edit employees.")
+        # GET request logic (if needed): render template or return info
+        return HttpResponse("Bad request.")
+
 
 
 from django.db.models import Value, CharField

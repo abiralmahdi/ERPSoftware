@@ -647,6 +647,8 @@
                         <td>
                             {% if attn.date|date:"l" == globalConfig.weekend and attn.inTime %}
                                 <span class="badge bg-info">present-weekend</span>
+                            {% elif attn.date|date:"l" == globalConfig.weekend and attn.status == 'absent' %}
+                                <span class="badge bg-dark text-light">weekend</span>
                             {% elif attn.inTime <= globalConfig.officeStartTime or not attn.inTime %}
                                 <span class="badge bg-{% if attn.status == 'present' %}success{% elif attn.status == 'leave' %}warning{% else %}danger{% endif %}">{{attn.status}}</span>
                             {% else %}
