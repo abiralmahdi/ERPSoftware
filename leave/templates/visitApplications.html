@@ -1,6 +1,106 @@
 {% extends 'layout.html' %}
 {% block body %}
-<div class="container mt-5" style="min-width: 1600px !important">
+<style>
+    /* Keep desktop as-is: min-width override in your container is respected */
+
+/* Responsive adjustments for tablets and smaller */
+@media (max-width: 991px) {
+  .container{
+    min-width: unset !important;
+    width: 100% !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    box-sizing: border-box;
+  }
+
+  /* Form wrapper flexbox wraps */
+  .d-flex.mb-3.mt-5.pt-5 {
+    flex-wrap: wrap !important;
+    gap: 10px;
+  }
+
+  /* Make form fill width and stack elements */
+  .d-flex.mb-3.mt-5.pt-5 form.form.d-flex.me-auto {
+    flex: 1 1 100% !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+
+  /* Inputs, select and buttons fill width */
+  .d-flex.mb-3.mt-5.pt-5 form.form.d-flex.me-auto input.form-control,
+  .d-flex.mb-3.mt-5.pt-5 form.form.d-flex.me-auto select.btn,
+  .d-flex.mb-3.mt-5.pt-5 form.form.d-flex.me-auto button.btn {
+    flex-basis: 100% !important;
+    max-width: 80% !important;
+  }
+
+  /* Make 'Apply' button full width and margin top */
+  .d-flex.mb-3.mt-5.pt-5 > button.btn.btn-dark.ms-auto {
+    flex-basis: 100% !important;
+    max-width: 100% !important;
+    margin-top: 10px;
+  }
+
+  /* Table container horizontal scroll & scroll height limit */
+  .table-responsive {
+    overflow-x: auto !important;
+    max-height: 400px !important;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+
+  /* Table min width and font */
+  table.table {
+    min-width: 900px; /* allows horizontal scroll */
+    width: 100%;
+    font-size: 0.9rem;
+    table-layout: auto;
+  }
+
+  /* Table cells nowrap and padding */
+  table.table th,
+  table.table td {
+    white-space: nowrap;
+    vertical-align: middle;
+    padding: 0.35rem 0.5rem;
+  }
+
+  /* Sticky header */
+  thead.table-light.position-sticky.top-0 th {
+    position: sticky !important;
+    top: 0 !important;
+    background-color: #f8f9fa !important;
+    z-index: 10 !important;
+  }
+}
+
+/* Further compaction on smaller phones */
+@media (max-width: 575px) {
+  .table-responsive {
+    max-height: 300px !important;
+  }
+
+  table.table {
+    min-width: 600px;
+    font-size: 0.85rem !important;
+  }
+
+  table.table th,
+  table.table td {
+    padding: 0.2rem 0.4rem !important;
+  }
+
+  /* Buttons and inputs font size smaller */
+  .btn,
+  .btn-dark,
+  .form-control {
+    font-size: 0.8rem !important;
+  }
+}
+
+</style>
+<div class="container mt-5">
     <div class="d-flex mb-3 mt-5 pt-5">
         <form class="form d-flex me-auto" method="POST">
             {% csrf_token %}

@@ -8,6 +8,114 @@
         z-index: 2;
         background-color: #f8f9fa; /* matches Bootstrap table header color */
     }
+
+    /* Container adjustments for mobile */
+@media (max-width: 991px) {
+    .d-flex {
+        flex-direction: column !important;
+    }
+
+    .bg-light.text-dark.p-3 {
+        width: 100% !important;
+        min-height: auto !important;
+        margin-bottom: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    div[style*="width: 1200px;"] {
+        width: 100% !important;
+        padding: 0 1rem !important;
+        box-sizing: border-box;
+    }
+
+    /* Form and controls stacked and full width */
+    form.d-flex {
+        flex-direction: column !important;
+        gap: 8px;
+    }
+    form.d-flex input.form-control,
+    form.d-flex button.btn {
+        width: 100% !important;
+        font-size: 1rem;
+    }
+
+    /* Button placed after form with margin */
+    form.d-flex + button.btn-dark {
+        margin-left: 0;
+        margin-top: 0.5rem;
+        width: 100%;
+    }
+}
+
+/* Table responsiveness */
+@media (max-width: 991px) {
+    .table-container {
+        max-height: 300px !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 0.5rem;
+        border: 1px solid #ddd;
+    }
+
+    table.table {
+        width: auto !important;
+        min-width: 600px;
+        font-size: 0.9rem;
+        table-layout: auto;
+    }
+
+    table.table th,
+    table.table td {
+        white-space: nowrap;
+        padding: 0.3rem 0.6rem !important;
+        vertical-align: middle;
+    }
+
+    thead.sticky-header th {
+        position: sticky !important;
+        top: 0 !important;
+        background-color: #f8f9fa !important;
+        z-index: 10 !important;
+    }
+}
+
+/* Further compact on phones */
+@media (max-width: 575px) {
+    .table-container {
+        max-height: 250px !important;
+    }
+
+    table.table {
+        font-size: 0.85rem !important;
+        min-width: 460px;
+    }
+
+    table.table th,
+    table.table td {
+        padding: 0.2rem 0.4rem !important;
+    }
+
+    form.d-flex input.form-control,
+    form.d-flex button.btn {
+        font-size: 0.9rem !important;
+    }
+
+    .btn-dark {
+        font-size: 0.85rem !important;
+        padding: 0.35rem 0.7rem !important;
+    }
+}
+
+/* Make navigation links wrap nicely */
+.bg-light .nav-link {
+    word-break: break-word;
+}
+.bg-light .nav-link.fw-bold.shadow {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    border-radius: 0.2em;
+}
+
 </style>
 
 

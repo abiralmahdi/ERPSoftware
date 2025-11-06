@@ -1,7 +1,71 @@
 {% extends 'layout3.html' %}
 {% block body %}
+<style>
+  /* Container full width with padding on smaller screens */
+@media (max-width: 1199px) {
+  .container {
+    width: 100% !important;
+    min-width: unset !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    box-sizing: border-box;
+  }
+}
 
-<div class="table-responsive" style="min-width: 1350px !important;">
+/* Table responsive with horizontal scroll and fixed height */
+@media (max-width: 991px) {
+  .table-responsive {
+    max-height: 450px !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+  }
+  table.table {
+    min-width: 900px; /* enough for many columns */
+    width: 100%;
+    font-size: 0.9rem;
+    table-layout: auto;
+  }
+  table.table th,
+  table.table td {
+    white-space: nowrap;
+    padding: 0.35rem 0.6rem;
+    vertical-align: middle;
+  }
+  thead.sticky-header {
+    position: sticky !important;
+    top: 0 !important;
+    background-color: #f8f9fa !important;
+    z-index: 10;
+  }
+}
+
+/* Stack modal form controls on small viewports */
+@media (max-width: 575px) {
+  .modal-lg .row.g-3 > div {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+  }
+  table.table {
+    min-width: 600px;
+    font-size: 0.85rem !important;
+  }
+  table.table th,
+  table.table td {
+    padding: 0.2rem 0.4rem !important;
+  }
+  /* Adjust modal max width */
+  .modal-lg {
+    max-width: 95vw !important;
+    margin: 0.4rem auto;
+  }
+}
+
+</style>
+<div class="table-responsive" >
     <table class="table table-striped">
         <thead class="sticky-header">
             <tr>

@@ -1,6 +1,6 @@
 {% extends 'layout.html' %}
 {% block body %}
-<div class="container mt-5 pt-5" style="min-width: 1500px !important;">
+<div class="container mt-5 pt-5">
     <h3>Holiday Calendar - {{ year }}</h3>
 
     <!-- Month Tabs -->
@@ -9,50 +9,99 @@
         #monthTabs .nav-link {
             color: black !important;
         }
-        
         /* Make the active tab bold */
         #monthTabs .nav-link.active {
             font-weight: bold;
         }
-        </style>
-        
-        <ul class="nav nav-tabs mt-3" id="monthTabs" role="tablist">
-            {% for month in months %}
-            <li class="nav-item" role="presentation">
-                <button class="nav-link {% if forloop.first %}active{% endif %}" 
-                        id="tab-{{ month.number }}" data-bs-toggle="tab" 
-                        data-bs-target="#month-{{ month.number }}" type="button" role="tab">
-                    {{ month.name }}
-                </button>
-            </li>
-            {% endfor %}
-        </ul>
-        
+
+        /* GRID for days: 7 equal columns */
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        /* Day button styles */
+        .day-btn {
+            width: 100% !important;
+            min-height: 90px;
+            padding: 8px 5px;
+            white-space: normal;
+            overflow-wrap: break-word;
+            font-size: 1.1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: center;
+            border-radius: 5px;
+        }
+
+        /* Highlight holidays */
+        .btn-danger.day-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        /* Responsive tweaks for small screens */
+        @media (max-width: 575px) {
+            .day-btn {
+                min-height: 75px;
+                font-size: 0.9rem;
+                padding: 6px 4px;
+            }
+        }
+        #monthTabs {
+            display: flex;
+            flex-wrap: nowrap !important;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+            scrollbar-width: none; /* Hide scrollbar in Firefox */
+        }
+
+        #monthTabs::-webkit-scrollbar {
+            display: none; /* Hide scrollbar in Chrome, Safari */
+        }
+
+        #monthTabs .nav-item {
+            flex: 0 0 auto; /* Prevent shrinking and growing */
+        }
+
+        #monthTabs .nav-link {
+            white-space: nowrap; /* Prevent text wrap inside tabs */
+        }
+    </style>
+
+    <ul class="nav nav-tabs mt-3" id="monthTabs" role="tablist">
+        {% for month in months %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if forloop.first %}active{% endif %}" 
+                    id="tab-{{ month.number }}" data-bs-toggle="tab" 
+                    data-bs-target="#month-{{ month.number }}" type="button" role="tab">
+                {{ month.name }}
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
 
     <!-- Tab Content -->
     <div class="tab-content mt-3">
         {% for month in months %}
         <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" 
              id="month-{{ month.number }}" role="tabpanel">
-            <!-- Inside your month tab content loop -->
-            <div class="row g-1 justify-content-center">
+            <!-- Use CSS grid with 7 columns -->
+            <div class="days-grid">
                 {% for day in month.days %}
-                <div class="col-1 text-center">
-                    <button class="btn {% if day in holidays %}btn-danger{% endif %} day-btn" 
-                            data-date="{{ day|date:'Y-m-d' }}" 
-                            data-bs-toggle="modal" data-bs-target="#holidayModal"
-                            style="width: 120px !important; height: 100px !important; overflow: auto; scrollbar-width: none; -ms-overflow-style: none;">
-                        <div style="font-size: 1.5rem; font-weight: bold;">{{ day.day }}</div>
-                        <div style="font-size: 1rem; color: gray;">{{ day|date:'D' }}</div>
-                        <div style="font-size: 0.8rem; color: orange;">
-                            <span class="holiday-name" data-date="{{ day|date:'Y-m-d' }}"></span>
-                        </div>
-                    </button>
-                </div>
-                {% if forloop.counter|divisibleby:7 %}<div class="w-100"></div>{% endif %}
+                <button class="btn {% if day in holidays %}btn-danger{% else %}btn-light{% endif %} day-btn"
+                        data-date="{{ day|date:'Y-m-d' }}" 
+                        data-bs-toggle="modal" data-bs-target="#holidayModal" 
+                        type="button">
+                    <div style="font-weight: bold;">{{ day.day }}</div>
+                    <div style="color: gray;">{{ day|date:'D' }}</div>
+                    <div style="color: orange; font-size: 0.85rem;" class="holiday-name" 
+                         data-date="{{ day|date:'Y-m-d' }}"></div>
+                </button>
                 {% endfor %}
             </div>
-
         </div>
         {% endfor %}
     </div>
@@ -85,73 +134,58 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Parse holidays JSON passed from Django context
-        const holidays = JSON.parse('{{ holidays_json|escapejs }}');
-    
-        const holidayBtns = document.querySelectorAll('.day-btn');
-        const holidayDateInput = document.getElementById('holidayDate');
-        const holidayForm = document.getElementById('holidayForm');
-        const holidayNameInput = document.getElementById('holidayName');
-        const holidayModal = document.getElementById('holidayModal');
-        const holidayTitle = holidayModal.querySelector('.modal-title');
-    
-        // Add holiday names on each button
-        holidayBtns.forEach(btn => {
-            const date = btn.dataset.date;
-            const nameEl = document.createElement('div');
-            nameEl.classList.add('holiday-name');
-            nameEl.style.fontSize = '0.75rem';
-            nameEl.style.color = 'orange';
-            nameEl.textContent = holidays[date] || '';
-            btn.appendChild(nameEl);
-    
-            btn.addEventListener('click', () => {
-                const dateStr = btn.dataset.date; // raw YYYY-MM-DD
-                const dateObj = new Date(dateStr);
-                const day = dateObj.getDate();
-                const month = dateObj.toLocaleString('default', { month: 'long' });
-                const year = dateObj.getFullYear();
-    
-                // Set modal title
-                holidayTitle.textContent = `${day}${getOrdinal(day)} ${month}, ${year}`;
-    
-                // Set hidden input value (raw)
-                holidayDateInput.value = dateStr;
-    
-                // Fill input with existing holiday name
-                holidayNameInput.value = holidays[dateStr] || '';
-            });
+document.addEventListener('DOMContentLoaded', () => {
+    const holidays = JSON.parse('{{ holidays_json|escapejs }}');
+
+    const holidayBtns = document.querySelectorAll('.day-btn');
+    const holidayDateInput = document.getElementById('holidayDate');
+    const holidayForm = document.getElementById('holidayForm');
+    const holidayNameInput = document.getElementById('holidayName');
+    const holidayModal = document.getElementById('holidayModal');
+    const holidayTitle = holidayModal.querySelector('.modal-title');
+
+    holidayBtns.forEach(btn => {
+        const date = btn.dataset.date;
+        const nameEl = btn.querySelector('.holiday-name');
+        nameEl.textContent = holidays[date] || '';
+
+        btn.addEventListener('click', () => {
+            const dateStr = btn.dataset.date;
+            const dateObj = new Date(dateStr);
+            const day = dateObj.getDate();
+            const month = dateObj.toLocaleString('default', { month: 'long' });
+            const year = dateObj.getFullYear();
+
+            holidayTitle.textContent = `${day}${getOrdinal(day)} ${month}, ${year}`;
+            holidayDateInput.value = dateStr;
+            holidayNameInput.value = holidays[dateStr] || '';
         });
-    
-        // Submit holiday form
-        holidayForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(holidayForm);
-            const res = await fetch("{% url 'add_holiday' %}", {
-                method: "POST",
-                body: formData,
-                headers: { "X-CSRFToken": formData.get("csrfmiddlewaretoken") }
-            });
-            const data = await res.json();
-            if (data.success) {
-                alert("Holiday saved: " + data.holiday);
-                location.reload(); // reload to update button color and holiday names
-            }
+    });
+
+    holidayForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(holidayForm);
+        const res = await fetch("{% url 'add_holiday' %}", {
+            method: "POST",
+            body: formData,
+            headers: { "X-CSRFToken": formData.get("csrfmiddlewaretoken") }
         });
-    
-        function getOrdinal(n) {
-            if (n > 3 && n < 21) return 'th';
-            switch (n % 10) {
-                case 1: return 'st';
-                case 2: return 'nd';
-                case 3: return 'rd';
-                default: return 'th';
-            }
+        const data = await res.json();
+        if (data.success) {
+            alert("Holiday saved: " + data.holiday);
+            location.reload();
         }
     });
-    </script>
-    
-        
-    
+
+    function getOrdinal(n) {
+        if (n > 3 && n < 21) return 'th';
+        switch (n % 10) {
+            case 1: return 'st';
+            case 2: return 'nd';
+            case 3: return 'rd';
+            default: return 'th';
+        }
+    }
+});
+</script>
 {% endblock %}

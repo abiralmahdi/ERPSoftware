@@ -1,6 +1,8 @@
 {% extends 'layout.html' %}
 {% block body %}
+
 <style>
+    /* Sticky header for table */
     .sticky-header th {
         position: sticky;
         top: 0;
@@ -8,30 +10,115 @@
         background-color: #f8f9fa;
     }
 
-    .table-container {
-        max-height: 400px;
-        overflow-y: auto;
-        position: relative;
-        width: 48%;
+    /* Container for each section */
+    .section-container {
+        margin-bottom: 2rem;
     }
 
-    .table-wrapper {
-        display: flex;
-        justify-content: space-between;
-        gap: 2%;
-        flex-wrap: wrap;
-    }
-
+    /* Add button container spacing */
     .add-btn-container {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-end;
         margin-bottom: 10px;
     }
 
-    .add-btn-container>div {
-        width: 48%;
+    /* Table container scroll */
+    .table-container {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+        width: 100%;
+    }
+
+    table.table {
+        width: 100%;
+        min-width: 300px;
+        border-collapse: collapse;
+    }
+
+    /* Reduce padding for rows */
+    table.table th,
+    table.table td {
+        padding: 0.4rem 0.8rem;
+        white-space: nowrap;
+        vertical-align: middle;
+        border-top: 1px solid #dee2e6;
+    }
+
+    /* Responsive Flexbox Layout */
+    .page-wrapper {
         display: flex;
-        justify-content: flex-end;
+        gap: 2rem;
+        min-width: 320px;
+        flex-wrap: wrap;
+    }
+
+    .page-wrapper > div {
+        flex: 1 1 45%;
+        min-width: 280px;
+    }
+
+    /* Sidebar navigation */
+    .sidebar {
+        min-width: 250px;
+        max-width: 250px;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        overflow-y: auto;
+    }
+
+    .sidebar h5 {
+        margin-bottom: 1rem;
+    }
+
+    .sidebar .nav-link {
+        margin-bottom: 0.5rem;
+        word-break: break-word;
+    }
+
+    .sidebar .nav-link.fw-bold.shadow {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        border-radius: 0.25rem;
+    }
+
+    /* Responsive adjustments */
+
+    @media (max-width: 991px) {
+        /* Stack sections vertically on tablets and below */
+        .page-wrapper {
+            flex-direction: column;
+        }
+        .page-wrapper > div {
+            flex-basis: 100%;
+            min-width: auto;
+        }
+        .sidebar {
+            position: relative;
+            height: auto;
+            max-width: 100%;
+            margin-bottom: 2rem;
+        }
+    }
+
+    @media (max-width: 575px) {
+        /* Buttons full width on mobile */
+        .add-btn-container button.btn {
+            width: 100%;
+        }
+        /* Smaller font size for small screens */
+        table.table {
+            font-size: 0.85rem;
+        }
+        table.table th,
+        table.table td {
+            padding: 0.3rem 0.5rem;
+        }
     }
 </style>
 
@@ -81,66 +168,70 @@
     </div>
 </div>
 
-<div class="container" style="margin-top: 130px; min-width: 1600px">
-    <div class="add-btn-container">
-        <div>
-            <h3 class="h4 me-auto fw-bold">Department</h3>
-            <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDepartmentModal">
-                <i class="fa-solid fa-plus me-2"></i>Add Department
-            </button>
-        </div>
-        <div>
-            <h3 class="h4 me-auto fw-bold">Designation</h3>
-            <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDesignationModal">
-                <i class="fa-solid fa-plus me-2"></i>Add Designation
-            </button>
-        </div>
-    </div>
+<div class="container" style="margin-top: 130px;">
 
-    <div class="table-wrapper">
-        <!-- Department Table -->
-        <div class="table-container">
-            <table class="table table-striped">
-                <thead class="sticky-header">
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Employees</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for department in departments %}
-                    <tr>
-                        <td>{{ department.id }}</td>
-                        <td>{{ department.name }}</td>
-                        <td>{{ department.employees.all.count }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="page-wrapper">
+        
+        <!-- Departments Section -->
+        <section class="section-container">
+            <div class="add-btn-container">
+                <h3 class="h4 me-auto fw-bold">Department</h3>
+                <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDepartmentModal">
+                    <i class="fa-solid fa-plus me-2"></i>Add Department
+                </button>
+            </div>
+            <div class="table-container">
+                <table class="table table-striped">
+                    <thead class="sticky-header">
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Employees</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for department in departments %}
+                        <tr>
+                            <td>{{ department.id }}</td>
+                            <td>{{ department.name }}</td>
+                            <td>{{ department.employees.all.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-        <!-- Designation Table -->
-        <div class="table-container">
-            <table class="table table-striped">
-                <thead class="sticky-header">
-                    <tr>
-                        <th>#</th>
-                        <th>Title</th>
-                        <th>Level</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for designation in designations %}
-                    <tr>
-                        <td>{{ designation.id }}</td>
-                        <td>{{ designation.title }}</td>
-                        <td>{{ designation.level }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <!-- Designations Section -->
+        <section class="section-container">
+            <div class="add-btn-container">
+                <h3 class="h4 me-auto fw-bold">Designation</h3>
+                <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDesignationModal">
+                    <i class="fa-solid fa-plus me-2"></i>Add Designation
+                </button>
+            </div>
+            <div class="table-container">
+                <table class="table table-striped">
+                    <thead class="sticky-header">
+                        <tr>
+                            <th>#</th>
+                            <th>Title</th>
+                            <th>Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for designation in designations %}
+                        <tr>
+                            <td>{{ designation.id }}</td>
+                            <td>{{ designation.title }}</td>
+                            <td>{{ designation.level }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
 </div>
+
 {% endblock %}

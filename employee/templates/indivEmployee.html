@@ -1,7 +1,10 @@
 {% extends 'layout.html' %}
 {% load custom_filters %}
 {% load static %}
-
+{% block head %}
+    <meta name="viewport" content="width=1600">
+    {{ block.super }}
+{% endblock %}
 {% block body %}
 
 <style>
@@ -9,6 +12,8 @@
     max-width: 100%;
     max-height: 400px;
 }
+
+
 </style>
 
 <div class="container bg-white p-4 shadow rounded" style="margin-top: 60px; min-width: 1600px !important;">

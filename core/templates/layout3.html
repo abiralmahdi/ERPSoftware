@@ -28,6 +28,76 @@
       z-index: 2;
       background-color: #f8f9fa; /* matches Bootstrap table header color */
   }
+
+  /* Container full width on smaller screens */
+@media (max-width: 1199px) {
+  .container.mt-5 {
+    min-width: unset !important;
+    width: 100% !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    box-sizing: border-box;
+  }
+}
+
+/* Layout stacking and wrapping on mobile */
+@media (max-width: 991px) {
+  .d-flex {
+    flex-direction: column !important;
+  }
+
+  /* Sidebar full width */
+  .bg-light.text-dark.p-3 {
+    width: 100% !important;
+    min-height: auto !important;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+  }
+
+  /* Main content width fluid */
+  div[style*="width: 1200px"] {
+    width: 100% !important;
+    padding: 0 1rem;
+    box-sizing: border-box;
+    min-width: unset !important;
+  }
+}
+
+/* Modal width */
+@media (max-width: 991px) {
+  .modal-lg {
+    max-width: 95vw !important;
+    margin: 0.5rem auto;
+  }
+}
+
+/* Buttons and forms responsiveness */
+@media (max-width: 575px) {
+  /* Navbar toggle styling */
+  .navbar-toggler {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* Force sidebar links wrap */
+  .bg-light .nav-link {
+    word-break: break-word;
+  }
+
+  .bg-light .nav-link.fw-bold.shadow {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    border-radius: 0.2em;
+  }
+
+  /* Button lengths */
+  button.btn,
+  .btn {
+    width: 100% !important;
+    font-size: 0.9rem !important;
+    margin-top: 0.3rem;
+  }
+}
+
 </style>
 </head>
 <body>

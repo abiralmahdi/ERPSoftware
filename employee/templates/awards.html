@@ -8,6 +8,107 @@
         z-index: 2;
         background-color: #f8f9fa; /* matches Bootstrap table header color */
     }
+
+    /* Container fluid for smaller screens */
+@media (max-width: 1199px) {
+  div[style*="width: 1200px"] {
+    width: 100% !important;
+    padding: 1rem;
+    box-sizing: border-box;
+  }
+}
+
+/* Sidebar stacks above main content and full width */
+@media (max-width: 991px) {
+  .d-flex {
+    flex-direction: column !important;
+  }
+  .bg-light.text-dark.p-3 {
+    width: 100% !important;
+    min-height: auto !important;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+  }
+}
+
+/* Search form and add button stack and fill width */
+@media (max-width: 575px) {
+  .d-flex.mb-3 {
+    flex-direction: column !important;
+    gap: 10px;
+  }
+  .d-flex.mb-3 form.d-flex input.form-control,
+  .d-flex.mb-3 form.d-flex button.btn,
+  .d-flex.mb-3 > button.btn-dark {
+    width: 100% !important;
+    max-width: 100%;
+  }
+}
+
+/* Table container constraints and scroll */
+@media (max-width: 991px) {
+  .table-container {
+    max-height: 300px !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid #ddd;
+  }
+
+  table.table {
+    width: auto !important;
+    min-width: 600px;
+    font-size: 0.9rem;
+    table-layout: auto;
+  }
+
+  table.table th,
+  table.table td {
+    white-space: nowrap;
+    padding: 0.3rem 0.5rem !important;
+    vertical-align: middle;
+  }
+
+  thead.sticky-header {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 10;
+  }
+}
+
+/* Further compaction on small phones */
+@media (max-width: 575px) {
+  .table-container {
+    max-height: 250px !important;
+  }
+
+  table.table {
+    min-width: 450px;
+    font-size: 0.85rem !important;
+  }
+
+  table.table th,
+  table.table td {
+    padding: 0.2rem 0.4rem !important;
+  }
+
+  .btn,
+  .btn-dark {
+    font-size: 0.8rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+}
+
+/* Sidebar nav wrapping */
+.bg-light .nav-link {
+  word-break: break-word;
+}
+.bg-light .nav-link.fw-bold.shadow {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  border-radius: 0.25rem;
+}
+
 </style>
 
 

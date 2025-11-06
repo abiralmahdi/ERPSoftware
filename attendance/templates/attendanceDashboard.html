@@ -10,6 +10,78 @@
         margin-bottom: 15px;
     }
 </style>
+<style>
+    /* Responsive layout for mobile screens */
+@media (max-width: 767px) {
+    .mx-5, .mt-5, .pt-4 {
+        padding: 0.5rem !important;
+    }
+
+    /* Stack filter controls vertically */
+    .d-flex.gap-2,
+    .card-header.d-flex.justify-content-between {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+
+    /* Make input/select/button blocks fill parent width */
+    .form-control,
+    .form-control-sm,
+    .btn,
+    .btn-dark,
+    input[type="text"],
+    input[type="date"],
+    select {
+        width: 100% !important;
+        min-width: 0 !important;
+        font-size: 1rem !important;
+        margin-bottom: 8px;
+    }
+
+    /* Reduce heading size if needed */
+    h6, h5 {
+        font-size: 1.1rem !important;
+    }
+
+    /* Make card body use natural height */
+    .card-body {
+        height: auto !important;
+        padding: 0.3rem !important;
+    }
+
+    /* Table scroll on x-axis for small screens */
+    .table-responsive,
+    .card .table-responsive {
+        max-height: 210px;
+        overflow-x: auto !important;
+        overflow-y: auto !important;
+    }
+
+    .table {
+        width: 900px !important; /* Force horizontal scroll if table is wide */
+        font-size: 0.95rem;
+    }
+
+    /* Attendance chart reduced height */
+    #attendanceChart {
+        height: 200px !important;
+    }
+
+    /* Badges font size and padding for mobile */
+    .badge {
+        font-size: 0.85rem !important;
+        padding: 4px 8px !important;
+    }
+
+    /* Reduce gap between cards on mobile */
+    .row > [class*="col-"] {
+        margin-bottom: 16px !important;
+    }
+}
+
+</style>
+
 
 <div class="mx-5 mt-5 pt-4">
     <div class="row">

@@ -1,5 +1,76 @@
 {% extends 'layout2.html' %}
 {% block body %}
+<style>
+  .container {
+    margin-top: 80px;
+    min-width: 1600px; /* Fixed width for desktop */
+}
+
+/* Sticky table header */
+.table thead.position-sticky {
+    top: 0;
+    z-index: 1020; /* Bootstrap modals have z-index up to 1050 */
+    background-color: #f8f9fa;
+}
+
+.table th, .table td {
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+}
+
+/* Responsive styles for small screens */
+@media (max-width: 768px) {
+
+    .container {
+        min-width: auto; /* Allow container to shrink */
+        margin: 20px 10px;
+        padding: 0 10px;
+    }
+
+    /* Stack filter form controls vertically */
+    form.form.d-flex {
+        flex-direction: column !important;
+        align-items: stretch;
+    }
+    form.form.d-flex > * {
+        width: 100% !important;
+        margin-right: 0 !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* Allow table container horizontal scroll */
+    .table-responsive {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+    }
+
+    /* Smaller font size for table on mobile */
+    table.table {
+        font-size: 0.85rem;
+        min-width: 100%;
+    }
+
+    /* Reduce vertical padding in table cells */
+    .table th, .table td {
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
+    }
+
+    /* Modals scale near full width */
+    .modal-dialog, .modal-dialog.modal-lg {
+        max-width: 95vw;
+        margin: 1.75rem auto;
+    }
+
+    /* Adjust video and images in modal for camera preview */
+    #cameraStream, #capturedImage {
+        max-height: 220px;
+        width: 100% !important;
+    }
+}
+
+</style>
 <!-- Apply Visit Modal -->
 <div class="modal fade" id="applyVisitModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -96,7 +167,7 @@
   </div>
   
   
-<div class="container mt-5" style="min-width: 1600px !important">
+<div class="container mt-5">
     <div class="d-flex mb-3 mt-5 pt-5">
         <form class="form d-flex me-auto align-items-center" method="GET">
             <!-- Employee Search -->
@@ -133,15 +204,16 @@
             <input type="date" class="form-control me-2" name="endDateFilter"
                    value="{{ request.GET.endDateFilter }}">
     
-            <button type="submit" class="btn btn-dark">Filter</button>
+            <button type="submit" class="btn btn-dark me-1">Filter</button>
+            <button class="btn btn-dark me-1" data-bs-toggle="modal" data-bs-target="#applyVisitModal">
+              <i class="fa-solid fa-plus me-2"></i>Apply
+          </button>
+          <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+              <i class="fa-solid fa-plus me-2"></i>Add Customer
+          </button>
         </form>
     
-        <button class="btn btn-dark ms-auto" data-bs-toggle="modal" data-bs-target="#applyVisitModal">
-            <i class="fa-solid fa-plus me-2"></i>Apply
-        </button>
-        <button class="btn btn-dark ms-3" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
-            <i class="fa-solid fa-plus me-2"></i>Add Customer
-        </button>
+        
     </div>
     
     

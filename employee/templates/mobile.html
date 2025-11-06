@@ -8,6 +8,95 @@
         z-index: 2;
         background-color: #f8f9fa; /* matches Bootstrap table header color */
     }
+
+    /* Container and layout adjustments */
+@media (max-width: 1199px) {
+    div[style*="width: 1200px;"] {
+        width: 100% !important;
+        padding: 0 1rem;
+        box-sizing: border-box;
+    }
+}
+
+/* Sidebar and content stack vertically on tablets and below */
+@media (max-width: 991px) {
+    .d-flex {
+        flex-direction: column !important;
+    }
+
+    .bg-light.text-dark.p-3 {
+        width: 100% !important;
+        min-height: unset !important;
+        margin-bottom: 1.5rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+/* Table responsiveness and compact styling */
+@media (max-width: 991px) {
+    .table-container {
+        max-height: 400px !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 0.5rem;
+        border: 1px solid #ddd;
+    }
+
+    table.table {
+        width: auto !important;
+        min-width: 600px;
+        font-size: 0.9rem;
+        table-layout: auto;
+    }
+
+    table.table th,
+    table.table td {
+        padding: 0.3rem 0.6rem !important;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    thead.sticky-header th {
+        position: sticky;
+        top: 0;
+        background: #f8f9fa;
+        z-index: 10;
+    }
+}
+
+/* Smaller phones: further compact */
+@media (max-width: 575px) {
+    .table-container {
+        max-height: 300px !important;
+    }
+
+    table.table {
+        font-size: 0.85rem !important;
+        min-width: 460px;
+    }
+
+    table.table th,
+    table.table td {
+        padding: 0.2rem 0.4rem !important;
+    }
+    
+    /* Modal width scaling */
+    .modal-lg {
+        max-width: 95vw !important;
+        margin: 0.3rem auto;
+    }
+}
+
+/* Ensure nav links word-break nicely */
+.bg-light .nav-link {
+    word-break: break-word;
+}
+.bg-light .nav-link.fw-bold.shadow {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    border-radius: 0.2em;
+}
+
 </style>
 
 

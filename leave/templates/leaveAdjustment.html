@@ -2,15 +2,90 @@
 {% block body %}
 
 <style>
+
     .small-row td {
         padding: 0.25rem 0.5rem;
         vertical-align: middle;
     }
+    /* Container full width with padding on smaller devices */
+@media (max-width: 1199px) {
+  .container[style*="min-width: 1600px"] {
+    min-width: unset !important;
+    width: 100% !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    box-sizing: border-box;
+  }
+}
+
+/* Stack and wrap form inputs and button on small screens */
+@media (max-width: 991px) {
+  .d-flex.mb-3.mt-5.pt-5 {
+    flex-wrap: wrap !important;
+    gap: 10px;
+  }
+  .d-flex.mb-3.mt-5.pt-5 form.form.d-flex.me-auto {
+    flex: 1 1 100% !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+  }
+  .d-flex.mb-3.mt-5.pt-5 form.form.d-flex.me-auto input.form-control,
+  .d-flex.mb-3.mt-5.pt-5 form.form.d-flex.me-auto select.btn,
+  .d-flex.mb-3.mt-5.pt-5 form.form.d-flex.me-auto button.btn {
+    width: 100% !important;
+    min-width: 120px;
+  }
+}
+
+/* Table container scrollable and limited height */
+@media (max-width: 991px) {
+  .table-responsive {
+    overflow-x: auto !important;
+    max-height: 500px;
+    border: 1px solid #ddd;
+  }
+  table.table {
+    min-width: 900px;
+    width: 100%;
+    font-size: 0.9rem;
+    table-layout: auto;
+  }
+  table.table th, table.table td {
+    white-space: nowrap;
+    padding: 0.3rem 0.6rem;
+    vertical-align: middle;
+  }
+  thead.table-light.position-sticky.top-0 th {
+    position: sticky !important;
+    top: 0 !important;
+    background-color: #f8f9fa !important;
+    z-index: 10 !important;
+  }
+}
+
+/* Compact fonts and paddings on phones */
+@media (max-width: 575px) {
+  .table-responsive {
+    max-height: 300px !important;
+  }
+  table.table {
+    min-width: 600px;
+    font-size: 0.85rem !important;
+  }
+  table.table th, table.table td {
+    padding: 0.2rem 0.4rem !important;
+  }
+  .btn, .btn-dark {
+    font-size: 0.8rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+}
+
 </style>
 
-<div class="container mt-5" style="min-width: 1600px !important">
+<div class="container mt-5" >
     <div class="d-flex mb-3 mt-5 pt-5">
-        <form class="form d-flex me-auto" method="POST">
+        <form class="form d-flex flex-wrap me-auto" method="POST">
             {% csrf_token %}
             <input type="hidden" name="search_form" value="1">
             <!-- Search Input -->

@@ -9,6 +9,100 @@
         font-size: 1.25rem;
         margin-bottom: 15px;
     }
+
+    /* Make container fluid on small devices */
+@media (max-width: 1199px) {
+  .container[style*="min-width: 1600px"] {
+    min-width: unset !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    box-sizing: border-box;
+  }
+}
+
+/* Table and layout responsiveness for tablets and phones */
+@media (max-width: 991px) {
+  .d-flex.mb-3.mt-5.pt-5 {
+    flex-direction: column !important;
+  }
+
+  /* Search form and buttons stack vertically */
+  .d-flex.mb-3.mt-5.pt-5 form.form.d-flex.me-auto {
+    width: 100% !important;
+    margin-bottom: 1rem;
+  }
+  .d-flex.mb-3.mt-5.pt-5 button.btn-dark.ms-auto {
+    width: 100% !important;
+  }
+
+  /* Tables stack vertically and scroll horizontally */
+  .row {
+    flex-direction: column !important;
+  }
+
+  .col-md-6 {
+    width: 100% !important;
+  }
+
+  .table-responsive {
+    max-height: 300px !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table.table {
+    font-size: 0.9rem;
+    min-width: 600px;
+    width: 100%;
+    table-layout: auto;
+  }
+
+  table.table th,
+  table.table td {
+    white-space: nowrap;
+    padding: 0.3rem 0.6rem;
+    vertical-align: middle;
+  }
+
+  thead.table-light.position-sticky.top-0 th {
+    position: sticky !important;
+    top: 0 !important;
+    background-color: #f8f9fa !important;
+    z-index: 10 !important;
+  }
+}
+
+/* Smaller phones further compact */
+@media (max-width: 575px) {
+  .table-responsive {
+    max-height: 250px !important;
+  }
+
+  table.table {
+    font-size: 0.85rem !important;
+    min-width: 480px;
+  }
+
+  table.table th,
+  table.table td {
+    padding: 0.2rem 0.4rem !important;
+  }
+
+  .btn,
+  .btn-dark {
+    font-size: 0.8rem !important;
+    padding: 0.3rem 0.5rem !important;
+  }
+}
+
+/* Responsive canvas for chart */
+@media (max-width: 575px) {
+  #barChart {
+    max-width: 100% !important;
+  }
+}
+
 </style>
 
 <div class="mx-5 mt-5 pt-4">

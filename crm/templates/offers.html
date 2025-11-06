@@ -11,11 +11,71 @@
         padding-top: 0.3rem;
         padding-bottom: 0.3rem;
     }
+    .container {
+    margin-top: 80px;
+    min-width: 1600px; /* Fixed wide layout for desktop */
+}
+
+.sticky-header th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: #f8f9fa;
+}
+
+.table th, .table td {
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 768px) {
+    .container {
+        min-width: auto; /* Remove fixed width on mobile */
+        margin: 20px 10px;
+        padding: 0 10px;
+    }
+
+    /* Stack form controls vertically and full width */
+    form.form.d-flex.flex-wrap {
+        flex-direction: column !important;
+        align-items: stretch;
+    }
+    form.form.d-flex.flex-wrap > * {
+        width: 100% !important;
+        margin-right: 0 !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* Allow horizontal scroll for wide tables */
+    .table-container {
+        max-height: none;
+        overflow-x: auto;
+        overflow-y: visible;
+    }
+
+    table.table {
+        font-size: 0.85rem;
+        min-width: 100%;
+    }
+
+    .table th, .table td {
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
+    }
+
+    /* Modals near full width on mobile */
+    .modal-dialog.modal-lg {
+        max-width: 95vw;
+        margin: 1.75rem auto;
+    }
+}
+
 </style>
 
 
 
-<div class="container" style="margin-top: 80px; min-width: 1600px">
+<div class="container" >
     <div class="d-flex mb-3">
       <form class="form d-flex flex-wrap" method="GET" action="">
         <!-- Search Input -->

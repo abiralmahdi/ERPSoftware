@@ -1,9 +1,118 @@
 {% extends 'layout.html' %}
 {% block body %}
+<style>
+thead.sticky-header th {
+    position: sticky !important;
+    top: 0 !important;
+    background-color: #f8f9fa !important;
+    z-index: 12 !important;
+  }
+.table-container, .table-responsive{
+    max-height: 1000px !important;
+    overflow-y: auto;
+}
+   /* Container adjustments for responsiveness */
+@media (max-width: 1199px) {
+  .container.mt-5.pt-5 {
+    min-width: unset !important;
+    width: 100% !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    box-sizing: border-box;
+  }
+  
+}
+
+/* Table container scroll with max height */
+@media (max-width: 991px) {
+  .table-container,
+  .table-responsive {
+    max-height: 850px;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+  }
+
+  table.table {
+    min-width: 700px;
+    width: 100%;
+    font-size: 0.9rem;
+    table-layout: auto;
+  }
+
+  table.table th,
+  table.table td {
+    white-space: nowrap;
+    padding: 0.3rem 0.6rem;
+    vertical-align: middle;
+  }
+
+  thead.sticky-header th {
+    position: sticky !important;
+    top: 0 !important;
+    background-color: #f8f9fa !important;
+    z-index: 12 !important;
+  }
+}
+
+/* Buttons and controls stack on small screen */
+@media (max-width: 575px) {
+  .d-flex.mb-3.mt-5.pt-5 {
+    flex-direction: column !important;
+    gap: 10px;
+  }
+
+  .d-flex.mb-3.mt-5.pt-5 form.form.d-flex.me-auto input.form-control,
+  .d-flex.mb-3.mt-5.pt-5 form.form.d-flex.me-auto select.btn,
+  .d-flex.mb-3.mt-5.pt-5 form.form.d-flex.me-auto button.btn,
+  .d-flex.mb-3.mt-5.pt-5 > button.btn.btn-dark.ms-auto {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .d-flex.mb-3.mt-5.pt-5 > button.btn.btn-dark.ms-auto {
+    margin-top: 8px;
+  }
+
+  table.table {
+    min-width: 480px;  /* reduce min-width for phones */
+    font-size: 0.85rem !important;
+  }
+
+  table.table th,
+  table.table td {
+    padding: 0.2rem 0.4rem !important;
+  }
+}
+
+/* Modal responsiveness */
+
+@media (max-width: 991px) {
+  .modal-xl {
+    max-width: 95vw !important;
+    margin: 1rem auto;
+  }
+  #map {
+    height: 300px !important;
+  }
+}
+
+@media (max-width: 575px) {
+  .modal-xl {
+    max-width: 98vw !important;
+  }
+  #map {
+    height: 250px !important;
+  }
+}
+
+</style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<div class="container mt-5 pt-5" style="min-width: 1500px !important;">
+<div class="container mt-5 pt-5">
 
     <div class="table-container">
         <table class="table table-striped">

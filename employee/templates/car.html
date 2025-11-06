@@ -9,6 +9,78 @@
         z-index: 2;
         background-color: #f8f9fa; /* matches Bootstrap table header color */
     }
+
+    /* Container fluidity on smaller devices */
+@media (max-width: 991px) {
+  div[style*="width: 1200px;"] {
+    width: 100% !important;
+    padding: 1rem;
+    box-sizing: border-box;
+  }
+  .d-flex {
+    flex-direction: column !important;
+  }
+}
+
+/* Buttons aligned and stacked on mobile */
+@media (max-width: 575px) {
+  .d-flex.mb-3 {
+    flex-direction: column !important;
+    gap: 10px;
+  }
+  .d-flex.mb-3 > button {
+    width: 100% !important;
+  }
+}
+
+/* Table container scroll and height limit */
+@media (max-width: 991px) {
+  .table-container {
+    max-height: 250px;
+    overflow-x: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid #ddd;
+    margin-bottom: 1rem;
+  }
+
+  table.table {
+    min-width: 900px;
+    font-size: 0.85rem;
+    table-layout: auto;
+    width: 100%;
+  }
+
+  table.table th,
+  table.table td {
+    white-space: nowrap;
+    vertical-align: middle;
+    padding: 0.3rem 0.6rem !important;
+  }
+
+  thead.sticky-header {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 10;
+  }
+}
+
+/* Further compaction and font scaling for phones */
+@media (max-width: 575px) {
+  #sidebarr{
+    min-height: 20vh !important;
+  }
+  table.table {
+    min-width: 600px;
+    font-size: 0.8rem !important;
+  }
+  table.table th,
+  table.table td {
+    padding: 0.2rem 0.4rem !important;
+  }
+}
+
 </style>
 
 
@@ -139,7 +211,7 @@
   </div>
 
 <div class="d-flex" style="margin-top: 80px;">
-<div class="bg-light text-dark p-3" style="min-width: 250px; min-height: 100vh;">
+<div class="bg-light text-dark p-3" id="sidebarr" style="min-width: 250px; min-height: 100vh;">
         <h5 class="text-center mb-4">Employee Benefits</h5>
         <ul class="nav flex-column">
           <li class="nav-item">

@@ -262,24 +262,28 @@ def indivEmployee(request, employeeID):
     else:
         return HttpResponse("You do not have permission to view this employee's details.")
 
-
+@login_required
 def viewAwards(request):
     userModel = Employee.objects.get(user=request.user)
-    if request.user.is_superuser or userModel.designation.level == 2:
-        globalConfig = GlobalConfig.objects.all().first()
-        awards = Award.objects.all()
-        employees = Employee.objects.all()
+    globalConfig = GlobalConfig.objects.all().first()
+    awards = Award.objects.all()
+    employees = Employee.objects.all()
 
-        if (userModel.designation.level == 2):
+    if request.user.is_superuser:
+        awards = Award.objects.all()
+    elif userModel.designation.level == 2:
+        if userModel.designation.level == 2:
             awards = awards.filter(employee__department=userModel.department)
-        context = {
-            'awards': awards,
-            'employees':employees,
-            'globalConfig':globalConfig
-        }
-        return render(request, 'awards.html', context)
     else:
-        return HttpResponse("You do not have permission to view awards.")
+        # Normal employees see their own awards only
+        awards = awards.filter(employee=userModel)
+
+    context = {
+        'awards': awards,
+        'employees': employees,
+        'globalConfig': globalConfig
+    }
+    return render(request, 'awards.html', context)
 
 
 @login_required(login_url='/employees/login')
@@ -309,23 +313,27 @@ def addAwards(request):
     else:
         return HttpResponse("You do not have permission to add awards.")
 
+
 @login_required(login_url='/employees/login')
 def viewHealthInsurance(request):
     userModel = Employee.objects.get(user=request.user)
+    globalConfig = GlobalConfig.objects.all().first()
+    health_insurances = HealthInsurance.objects.all()
+    employees = Employee.objects.all()
+
     if request.user.is_superuser or userModel.designation.level == 2:
-        globalConfig = GlobalConfig.objects.all().first()
-        health_insurances = HealthInsurance.objects.all()
-        employees = Employee.objects.all()
         if userModel.designation.level == 2:
             health_insurances = health_insurances.filter(employee__department=userModel.department)
-        context = {
-            'insurances': health_insurances,
-            'employees': employees,
-            'globalConfig':globalConfig
-        }
-        return render(request, 'healthInsurance.html', context)
     else:
-        return HttpResponse("You do not have permission to view health insurance.")
+        # Normal employees see their own insurance only
+        health_insurances = health_insurances.filter(employee=userModel)
+
+    context = {
+        'insurances': health_insurances,
+        'employees': employees,
+        'globalConfig': globalConfig
+    }
+    return render(request, 'healthInsurance.html', context)
 
 
 from django.shortcuts import get_object_or_404
@@ -356,23 +364,28 @@ def addHealthInsurance(request):
 
     return redirect('/employees/benefits/healthInsurance') 
 
+
 @login_required
 def viewCar(request):
-    globalConfig = GlobalConfig.objects.all().first()
     userModel = Employee.objects.get(user=request.user)
-    if request.user.is_superuser or (userModel.department.name == "Administration" or userModel.department.name == "Admin" ):
-        cars = Car.objects.all()
-        carAmenities = CarUsage.objects.all()
-        employees = Employee.objects.all()
-        context = {
-            'cars': cars,
-            'carUsage':carAmenities,
-            'employees': employees,
-            'globalConfig':globalConfig
-        }
-        return render(request, 'car.html', context)
+    globalConfig = GlobalConfig.objects.all().first()
+    cars = Car.objects.all()
+    carAmenities = CarUsage.objects.all()
+    employees = Employee.objects.all()
+
+    if request.user.is_superuser or (userModel.department.name in ["Administration", "Admin"]):
+        pass
     else:
-        return HttpResponse("You do not have permission to view cars.")
+        # Normal employees see only car usages related to them and their own cars if applicable
+        carAmenities = carAmenities.filter(employee=userModel)
+
+    context = {
+        'cars': cars,
+        'carUsage': carAmenities,
+        'employees': employees,
+        'globalConfig': globalConfig
+    }
+    return render(request, 'car.html', context)
 
 @login_required(login_url='/employees/login')
 def addCar(request):
@@ -431,27 +444,25 @@ def addCarAmenity(request):
 @login_required(login_url='/employees/login')
 def viewMobile(request):
     userModel = Employee.objects.get(user=request.user)
-    if (
-            request.user.is_superuser or
-            userModel.department.name == "Administration" or 
-            userModel.department.name == "Admin" or 
-            userModel.designation.level == 2  or 
-            userModel.department.name == "HR" or 
-            userModel.department.name == "Human Resource"
-        ):
-        globalConfig = GlobalConfig.objects.all().first()
-        mobiles = Mobile.objects.all()
-        employees = Employee.objects.all()
+    globalConfig = GlobalConfig.objects.all().first()
+    mobiles = Mobile.objects.all()
+    employees = Employee.objects.all()
+
+    if (request.user.is_superuser or
+        userModel.department.name in ["Administration", "Admin", "HR", "Human Resource"] or
+        userModel.designation.level == 2):
         if userModel.designation.level == 2:
             mobiles = mobiles.filter(employee__department=userModel.department)
-        context = {
-            'mobiles':mobiles,
-            'employees': employees,
-            'globalConfig':globalConfig
-        }
-        return render(request, 'mobile.html', context)
     else:
-        return HttpResponse("You do not have permission to view mobile benefits.")
+        # Normal employees see their own mobiles
+        mobiles = mobiles.filter(employee=userModel)
+
+    context = {
+        'mobiles': mobiles,
+        'employees': employees,
+        'globalConfig': globalConfig
+    }
+    return render(request, 'mobile.html', context)
 
 @login_required(login_url='/employees/login')
 def addMobile(request):
@@ -481,24 +492,28 @@ def addMobile(request):
         return HttpResponse("You do not have permission to add mobile benefits.")
 
 
+
 @login_required(login_url='/employees/login')
 def viewAccomodation(request):
     userModel = Employee.objects.get(user=request.user)
-    if request.user.is_superuser or userModel.designation.level == 2 or userModel.department.name in ["HR", "Human Resource", "Admin", "Administration"]:
-        globalConfig = GlobalConfig.objects.all().first()
-        accomodations = Accomodation.objects.all()
-        employees = Employee.objects.all()
-        
+    globalConfig = GlobalConfig.objects.all().first()
+    accomodations = Accomodation.objects.all()
+    employees = Employee.objects.all()
+
+    if (request.user.is_superuser or userModel.designation.level == 2 or
+        userModel.department.name in ["HR", "Human Resource", "Admin", "Administration"]):
         if userModel.designation.level == 2:
             accomodations = accomodations.filter(employee__department=userModel.department)
-        context = {
-            'accomodations': accomodations,
-            'employees': employees,
-            'globalConfig':globalConfig
-        }
-        return render(request, 'accomodation.html', context)
     else:
-        return HttpResponse("You are not allowed to view accomodations")
+        accomodations = accomodations.filter(employee=userModel)
+
+    context = {
+        'accomodations': accomodations,
+        'employees': employees,
+        'globalConfig': globalConfig
+    }
+    return render(request, 'accomodation.html', context)
+
 
 @login_required(login_url='/employees/login')
 def addAccomodation(request):
@@ -531,23 +546,27 @@ def addAccomodation(request):
         return HttpResponse("You do not have permission to add accomodation benefits.")
 
 
+
 @login_required(login_url='/employees/login')
 def viewTravelAllowance(request):
     userModel = Employee.objects.get(user=request.user)
-    if request.user.is_superuser or userModel.designation.level == 2 or userModel.department.name in ["HR", "Human Resource", "Admin", "Administration"]:
-        globalConfig = GlobalConfig.objects.all().first()
-        travel_allowances = TravelAllowance.objects.all()
-        employees = Employee.objects.all()
+    globalConfig = GlobalConfig.objects.all().first()
+    travel_allowances = TravelAllowance.objects.all()
+    employees = Employee.objects.all()
+
+    if (request.user.is_superuser or userModel.designation.level == 2 or
+        userModel.department.name in ["HR", "Human Resource", "Admin", "Administration"]):
         if userModel.designation.level == 2:
             travel_allowances = travel_allowances.filter(employee__department=userModel.department)
-        context = {
-            'allowances': travel_allowances,
-            'employees': employees,
-            'globalConfig':globalConfig
-        }
-        return render(request, 'travelAllowance.html', context)
     else:
-        return HttpResponse("You do not have permission to view travel allowances.")
+        travel_allowances = travel_allowances.filter(employee=userModel)
+
+    context = {
+        'allowances': travel_allowances,
+        'employees': employees,
+        'globalConfig': globalConfig
+    }
+    return render(request, 'travelAllowance.html', context)
 
 @login_required(login_url='/employees/login')
 def addTravelAllowance(request):
@@ -607,52 +626,59 @@ from datetime import datetime
 @login_required(login_url='/employees/login')
 def viewFoodAndMeals(request):
     userModel = Employee.objects.get(user=request.user)
+    globalConfig = GlobalConfig.objects.all().first()
+    date_str = request.GET.get('date')
+    selected_date = None
+    isAdmin = False
+
+    if date_str:
+        try:
+            selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = None
+
+    # Check permissions
     if request.user.is_superuser or userModel.department.name in ['Admin', 'Administration']:
-        globalConfig = GlobalConfig.objects.all().first()
-        date_str = request.GET.get('date')
-        selected_date = None
-
-        if date_str:
-            try:
-                selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-                enrollments = LunchEnrollment.objects.filter(enrolled_on__date=selected_date, is_active=True)
-            except ValueError:
-                enrollments = LunchEnrollment.objects.filter(is_active=True)
-        else:
-            enrollments = LunchEnrollment.objects.filter(is_active=True)
-
-        employees = Employee.objects.select_related('user', 'department')
-
-        return render(request, 'food.html', {
-            'enrollments': enrollments.select_related('employee__user', 'employee__department'),
-            'employees': employees,
-            'selected_date': date_str,
-            'globalConfig':globalConfig
-        })
+        isAdmin = True
+        enrollments = LunchEnrollment.objects.filter(is_active=True)
+        if selected_date:
+            enrollments = enrollments.filter(enrolled_on__date=selected_date)
     else:
-        return HttpResponse("You do not have permission to view food and meals.")
+        isAdmin = False
+        # Normal employee can view only own enrollments
+        enrollments = LunchEnrollment.objects.filter(employee=userModel, is_active=True)
+        if selected_date:
+            enrollments = enrollments.filter(enrolled_on__date=selected_date)
+
+    enrollments = enrollments.select_related('employee__user', 'employee__department')
+    employees = Employee.objects.select_related('user', 'department')
+
+    return render(request, 'food.html', {
+        'enrollments': enrollments,
+        'employees': employees,
+        'selected_date': date_str,
+        'globalConfig': globalConfig,
+        'isAdmin':isAdmin,
+        'userModel':userModel
+    })
 
 
 @login_required(login_url='/employees/login')
 def add_lunch_enrollment(request):
     userModel = Employee.objects.get(user=request.user)
-    if request.user.is_superuser or userModel.designation.name in ['Admin', 'Administration']:
-        if request.method == 'POST':
-            employee_id = request.POST.get('employee_id')
-            if employee_id:
-                employee = Employee.objects.get(id=employee_id)
+    if request.method == 'POST':
+        employee_id = request.POST.get('employee_id')
+        if employee_id:
+            employee = Employee.objects.get(id=employee_id)
 
-                # Prevent duplicate active enrollments
-                if LunchEnrollment.objects.filter(employee=employee, is_active=True).exists():
-                    messages.warning(request, f"{employee.user.get_full_name()} is already enrolled.")
-                else:
-                    LunchEnrollment.objects.create(employee=employee)
-                    messages.success(request, f"{employee.user.get_full_name()} enrolled for lunch successfully.")
-            return redirect('/employees/benefits/viewFoodAndMeals')
-    else:
-        return HttpResponse("You do not have permission to add lunch enrollments.")
-    
-
+            # Prevent duplicate active enrollments
+            if LunchEnrollment.objects.filter(employee=employee, is_active=True).exists():
+                messages.warning(request, f"{employee.user.get_full_name()} is already enrolled.")
+            else:
+                LunchEnrollment.objects.create(employee=employee)
+                messages.success(request, f"{employee.user.get_full_name()} enrolled for lunch successfully.")
+        return redirect('/employees/benefits/viewFoodAndMeals')
+   
 def reimbursement_requests(request):
     if request.user.is_superuser or request.user.employee.department.name == 'Commercial' or request.user.employee.designation.level == 2:
         globalConfig = GlobalConfig.objects.all().first()

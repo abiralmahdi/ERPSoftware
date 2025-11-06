@@ -15,6 +15,95 @@
         padding-top: 0.2rem;
         padding-bottom: 0.1rem;
     }
+
+    /* Container becomes fluid on smaller screens */
+@media (max-width: 1199px) {
+  .container[style*="min-width: 1600px"] {
+    min-width: unset !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    box-sizing: border-box;
+  }
+}
+
+/* Stack search form controls vertically on small screens */
+@media (max-width: 991px) {
+  .d-flex.mb-3 {
+    flex-wrap: wrap !important;
+    gap: 10px;
+  }
+  .d-flex.mb-3 form.d-flex {
+    flex: 1 1 100% !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+  }
+  .d-flex.mb-3 form.d-flex input.form-control,
+  .d-flex.mb-3 form.d-flex select.btn,
+  .d-flex.mb-3 form.d-flex button.btn {
+    width: 100% !important;
+    min-width: 120px;
+  }
+  .d-flex.mb-3 > button.btn-dark {
+    flex: 1 1 100% !important;
+    max-width: 350px;
+    margin-left: 0 !important;
+  }
+}
+
+/* Table is horizontally scrollable with minimum width */
+@media (max-width: 991px) {
+  .table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    max-height: 500px;
+    border: 1px solid #ddd;
+  }
+  table.table {
+    min-width: 1100px; /* approx total width of columns */
+    font-size: 0.9rem;
+    table-layout: auto;
+  }
+  table.table th, table.table td {
+    padding: 0.3rem 0.6rem;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+  thead.sticky-header th {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    z-index: 10;
+  }
+}
+
+/* Further compaction on small phones */
+@media (max-width: 575px) {
+  .table-container {
+    max-height: 750px !important;
+  }
+  table.table {
+    min-width: 900px;
+    font-size: 0.85rem !important;
+  }
+  table.table th, table.table td {
+    padding: 0.2rem 0.4rem !important;
+  }
+  .btn,
+  .btn-dark {
+    font-size: 0.8rem !important;
+    padding: 0.3rem 0.5rem !important;
+  }
+}
+
+/* Sidebar links wrap nicely */
+.bg-light .nav-link {
+  word-break: break-word;
+}
+.bg-light .nav-link.fw-bold.shadow {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  border-radius: 0.2em;
+}
+
 </style>
 <!-- Modal -->
 <div class="modal fade" id="addEmployeeModal" tabindex="-1" aria-labelledby="addEmployeeModalLabel" aria-hidden="true">

@@ -1,5 +1,96 @@
 {% extends 'layout.html' %}
 {% block body %}
+<style>
+  /* Container adjustments */
+@media (max-width: 991px) {
+    .container {
+        min-width: auto !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    /* Filter form: stack vertically with spacing */
+    form.row.g-2.mb-3 {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    form.row.g-2.mb-3 > div,
+    form.row.g-2.mb-3 > button.btn {
+        flex: 1 1 100% !important;
+        max-width: 100% !important;
+        margin-right: 0 !important;
+    }
+
+    /* Make filter inputs full width */
+    input.form-control,
+    select.form-select,
+    button.btn {
+        width: 100% !important;
+        font-size: 1rem;
+    }
+
+    /* Table container scroll horizontally if needed */
+    .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Table width: auto sized columns, scroll if needed */
+    table.table {
+        width: auto !important;
+        max-width: 100%;
+        font-size: 0.9rem;
+        table-layout: auto;
+    }
+
+    /* Compact table padding, nowrap for columns */
+    table.table th,
+    table.table td {
+        padding: 0.3rem 0.5rem !important;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    /* Sticky header */
+    thead.table-light {
+        position: sticky;
+        top: 0;
+        background-color: #fff;
+        z-index: 5;
+    }
+
+    /* Modal sizing */
+    .modal-xl {
+        max-width: 95vw !important;
+    }
+}
+
+/* Smaller phones adjustments */
+@media (max-width: 575px) {
+    /* Further reduce font size for table and buttons */
+    table.table {
+        font-size: 0.8rem !important;
+    }
+
+    .btn-sm {
+        font-size: 0.75rem !important;
+        padding: 0.2rem 0.5rem !important;
+    }
+
+    /* Reduce padding for table rows */
+    table.table th,
+    table.table td {
+        padding: 0.2rem 0.4rem !important;
+    }
+
+    /* Modal body padding */
+    .modal-body {
+        padding: 0.8rem !important;
+    }
+}
+
+</style>
 <div class="container mt-5 pt-5" style=" min-width: 1600px">
     <form method="get" class="row g-2 mb-3">
         <div class="col-md-2">

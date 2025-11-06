@@ -1,6 +1,76 @@
 {% extends "layout3.html" %}
 {% block body %}
 
+<style>
+  /* Container responsiveness */
+@media (max-width: 1199px) {
+  .container {
+    width: 100% !important;
+    min-width: unset !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    box-sizing: border-box;
+  }
+}
+
+/* Responsive Gantt chart container */
+#gantt {
+  width: 100% !important;
+  height: auto !important;
+  min-height: 300px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Responsive table container with horizontal scroll */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Table layout auto for responsiveness */
+table.table {
+  width: 100% !important;
+  min-width: 600px;
+  font-size: 0.9rem;
+  table-layout: auto;
+}
+
+/* Prevent table cell wrapping */
+table.table th,
+table.table td {
+  white-space: nowrap;
+  padding: 0.3rem 0.5rem;
+  vertical-align: middle;
+}
+
+/* Sticky header */
+thead.table-light {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background-color: #f8f9fa;
+}
+
+/* Compact on very small devices */
+@media (max-width: 575px) {
+  #gantt {
+    min-height: 250px;
+  }
+
+  table.table {
+    min-width: 450px;
+    font-size: 0.85rem;
+  }
+
+  table.table th,
+  table.table td {
+    padding: 0.2rem 0.35rem;
+  }
+}
+
+</style>
+
 <div class="container">
   <h5 class="mb-4 mt-3">{{ indivProject.title }} - Timeline </h5>
   <div id="gantt" style="width: 1300px; min-height: 350px; margin-bottom: 40px;"></div>

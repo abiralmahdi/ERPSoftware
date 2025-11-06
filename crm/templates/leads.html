@@ -11,6 +11,68 @@
         padding-top: 0.3rem;
         padding-bottom: 0.3rem;
     }
+    .container {
+    margin-top: 80px;
+    min-width: 1600px; /* fixed wide layout for desktop */
+}
+
+.sticky-header th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: #f8f9fa;
+}
+
+.table th, .table td {
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 768px) {
+    .container {
+        min-width: auto; /* allow container to shrink on mobile */
+        margin: 20px 10px;
+        padding: 0 10px;
+    }
+
+    /* Stack and full width form controls */
+    form.form.d-flex.flex-wrap {
+        flex-direction: column !important;
+        align-items: stretch;
+    }
+    form.form.d-flex.flex-wrap > * {
+        width: 100% !important;
+        margin-right: 0 !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* Allow table container horizontal scroll */
+    .table-container {
+        max-height: none;
+        overflow-x: auto;
+        overflow-y: visible;
+    }
+
+    /* Smaller font size and responsive table width */
+    table.table {
+        font-size: 0.85rem;
+        min-width: 100%;
+    }
+
+    /* Reduce padding for table cells */
+    .table th, .table td {
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
+    }
+
+    /* Make modal dialogs almost full viewport width */
+    .modal-dialog.modal-lg, .modal-dialog {
+        max-width: 95vw;
+        margin: 1.75rem auto;
+    }
+}
+
 </style>
 
 
@@ -92,7 +154,7 @@
 </div>
 
 
-<div class="container" style="margin-top: 80px; min-width: 1600px">
+<div class="container">
     <div class="d-flex mb-3">
       <form class="form d-flex flex-wrap" method="GET" action="">
         <!-- Search Input -->
@@ -140,13 +202,14 @@
                value="{{ request.GET.end_date }}">
     
         <!-- Search Button -->
-        <button type="submit" class="btn btn-dark mb-2">Filter</button>
+        <button type="submit" class="btn btn-dark me-2 mb-2">Filter</button>
+        <button type="button" class="btn btn-dark btn-sm mb-2" data-bs-toggle="modal" data-bs-target="#leadModal">
+          <i class="fa-solid fa-plus me-2"></i>
+          Add Lead
+      </button>
     </form>
     
-        <button type="button" class="btn btn-dark ms-auto btn-sm" data-bs-toggle="modal" data-bs-target="#leadModal">
-            <i class="fa-solid fa-plus me-2"></i>
-            Add Lead
-        </button>
+
     </div>
 
     <div class="table-container" style="max-height: 650px; overflow-y: auto;">

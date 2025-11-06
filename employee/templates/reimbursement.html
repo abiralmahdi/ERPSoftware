@@ -33,6 +33,90 @@
             width: 100%;
         }
     }
+
+    /* Container fluidity for smaller screens */
+@media (max-width: 1199px) {
+    .d-flex > div[style*="width: 1600px;"] {
+        width: 100% !important;
+        min-width: unset !important;
+        padding: 0 1rem;
+        box-sizing: border-box;
+    }
+}
+
+/* Stack sidebar and main content vertically on tablets and smaller */
+@media (max-width: 991px) {
+    .d-flex {
+        flex-direction: column !important;
+    }
+
+    /* Sidebar adjustments */
+    .d-flex > div.bg-light {
+        width: 100% !important;
+        min-height: unset !important;
+        margin-bottom: 1.5rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+/* Table responsiveness and compactness */
+@media (max-width: 991px) {
+    .table-wrapper {
+        max-height: 400px !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid #ddd;
+        margin: 0 0.5rem;
+    }
+
+    table.table {
+        width: auto !important;
+        min-width: 700px;
+        table-layout: auto;
+        font-size: 0.9rem;
+    }
+
+    /* Reduce padding and prevent wrapping */
+    table.table th,
+    table.table td {
+        white-space: nowrap;
+        padding: 0.3rem 0.5rem !important;
+        vertical-align: middle;
+    }
+
+    /* Sticky header */
+    thead.table-light th {
+        position: sticky;
+        top: 0;
+        background: #f8f9fa;
+        z-index: 10;
+    }
+}
+
+/* Further compact on small mobiles */
+@media (max-width: 575px) {
+    .table-wrapper {
+        max-height: 300px !important;
+    }
+
+    table.table {
+        font-size: 0.8rem !important;
+        min-width: 480px;
+    }
+
+    table.table th,
+    table.table td {
+        padding: 0.2rem 0.4rem !important;
+    }
+    
+    /* Adjust modal padding and font sizes if needed */
+    .modal-dialog {
+        max-width: 95vw !important;
+        margin: 0.3rem auto;
+    }
+}
+
 </style>
 
 

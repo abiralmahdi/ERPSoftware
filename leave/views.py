@@ -390,6 +390,8 @@ def leaveDashboard(request):
             "globalConfig": globalConfig,
         }
         return render(request, 'leaveDashboard.html', context)
+    else:
+        return HttpResponse("You dont have access to the company's leave dashboard")
 
 
 @login_required(login_url='/employees/login')

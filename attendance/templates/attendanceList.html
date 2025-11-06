@@ -1,5 +1,77 @@
 {% extends 'layout.html' %}
 {% block body %}
+<style>
+    /* Responsive styles for attendance filter and table page */
+@media (max-width: 767px) {
+    /* Remove min-width forcing horizontal scroll */
+    .container {
+        min-width: auto !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    /* Stack the form fields vertically with spacing */
+    form.row.g-2.mb-3 {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* Make each filter input/select/button full width */
+    form.row.g-2.mb-3 .col-md-3,
+    form.row.g-2.mb-3 .col-md-2,
+    form.row.g-2.mb-3 .col-md-1 {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-right: 0 !important;
+    }
+
+    /* Make input and select fill their columns and larger hit areas */
+    input.form-control,
+    select.form-select,
+    button.btn {
+        width: 100% !important;
+        font-size: 1rem !important;
+        padding: 10px 8px !important;
+        box-sizing: border-box;
+    }
+
+    /* Table responsiveness */
+    .table-responsive {
+        max-height: 550px !important;
+        overflow-x: auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Make table wider than container to enable horizontal scroll */
+    table.table {
+        min-width: 900px;
+        font-size: 0.9rem;
+    }
+
+    /* Table header sticky fix for small view */
+    thead.table-light {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 3 !important;
+        background-color: #f8f9fa;
+    }
+
+    /* Smaller padding in table cells for compactness */
+    table.table td,
+    table.table th {
+        padding: 0.35rem 0.5rem !important;
+    }
+
+    /* Badges smaller font size */
+    .badge {
+        font-size: 0.8rem !important;
+        padding: 0.35em 0.6em !important;
+    }
+}
+
+</style>
 <div class="container mt-5 pt-5" style=" min-width: 1600px">
     <form method="get" class="row g-2 mb-3">
         <div class="col-md-3">

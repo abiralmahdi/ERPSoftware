@@ -2,6 +2,7 @@
 {% load fileBaseName %}
 {% block body %}
 <style>
+    /* Existing sticky header styles */
     .sticky-header th {
         position: sticky;
         top: 0;
@@ -12,9 +13,79 @@
         padding-top: 0.3rem;
         padding-bottom: 0.3rem;
     }
+
+    /* Existing container width for desktop */
+    .container {
+        margin-top: 80px;
+        min-width: 1600px;
+    }
+
+    /* Table container max height and scroll for desktop */
+    .table-container {
+        max-height: 650px;
+        overflow-y: auto;
+    }
+    .container {
+    margin-top: 80px;
+    min-width: 1600px; /* Keeps wide on desktop */
+}
+
+@media (max-width: 768px) {
+    .container {
+        min-width: auto; /* Removes fixed min-width for mobile */
+        margin: 20px; /* Smaller margin on mobile */
+        padding: 0 10px;
+    }
+}
+
+    /* Responsive adjustments for mobile devices */
+    @media (max-width: 768px) {
+        .container {
+            min-width: auto;  /* Remove fixed min-width */
+            margin: 20px;     /* Smaller margin for mobile */
+            padding: 0 10px;
+        }
+
+        /* Filter form stacks vertically on mobile */
+        form.d-flex.flex-wrap.mb-3 {
+            flex-direction: column !important;
+            align-items: stretch;
+        }
+        form.d-flex.flex-wrap.mb-3 > * {
+            width: 100% !important;
+            margin-right: 0 !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        /* Table wrapper allows horizontal scroll */
+        .table-container {
+            max-height: none;
+            overflow-x: auto;
+            overflow-y: visible;
+        }
+
+        /* Table font size smaller for mobile */
+        table.table {
+            font-size: 0.85rem;
+            min-width: 100%;
+        }
+
+        /* Modal full width on mobile with max width constraint */
+        .modal-dialog.modal-lg {
+            max-width: 95vw;
+            margin: 1.75rem auto;
+        }
+
+        /* Modify padding on table cells for smaller view */
+        .table th, .table td {
+            padding-top: 0.2rem;
+            padding-bottom: 0.2rem;
+        }
+    }
 </style>
 
-<div class="container" style="margin-top: 80px; min-width: 1600px">
+
+<div class="container">
     <div class="d-flex mb-3">
          <!-- Filter Form -->
     <form class="d-flex flex-wrap mb-3" method="GET">

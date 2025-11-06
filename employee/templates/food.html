@@ -18,6 +18,103 @@
       width: 100%;
     }
   }
+
+  /* Container fluid and adjusted on smaller screens */
+@media (max-width: 1199px) {
+  div[style*="width: 1200px;"] {
+    width: 100% !important;
+    padding: 0 1rem;
+    box-sizing: border-box;
+  }
+}
+
+/* Sidebar and content stacking vertically below tablets */
+@media (max-width: 991px) {
+  .d-flex {
+    flex-direction: column !important;
+  }
+
+  .bg-light.text-dark.p-3 {
+    width: 100% !important;
+    min-height: auto !important;
+    margin-bottom: 1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Table container responsive and compact */
+@media (max-width: 991px) {
+  .table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 0.9rem;
+    min-width: 600px;
+  }
+
+  thead.table-light,
+  .print-only-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    background-color: #f8f9fa !important;
+    z-index: 10 !important;
+  }
+
+  table.table th,
+  table.table td {
+    white-space: nowrap;
+    padding: 0.3rem 0.6rem !important;
+    vertical-align: middle;
+  }
+}
+
+/* Further compact on small phones */
+@media (max-width: 575px) {
+  .table {
+    min-width: 480px;
+    font-size: 0.85rem !important;
+  }
+  table.table th,
+  table.table td {
+    padding: 0.2rem 0.4rem !important;
+  }
+  .btn,
+  .btn-dark {
+    font-size: 0.85rem !important;
+    padding: 0.3rem 0.6rem !important;
+  }
+}
+
+@media (max-width: 575px) {
+  .btn-dark{
+    margin-top: 10px !important;
+  }
+    form.d-flex.ms-auto.me-3 {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 10px;
+        margin: 0 auto 1rem auto;
+        width: 100%;
+        max-width: 300px;
+    }
+
+    form.d-flex.ms-auto.me-3 input.form-control,
+    form.d-flex.ms-auto.me-3 button.btn {
+        width: 100% !important;
+    }
+}
+
+/* Navigation links wrap nicely */
+.bg-light .nav-link {
+  word-break: break-word;
+}
+.bg-light .nav-link.fw-bold.shadow {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  border-radius: 0.2em;
+}
+
 </style>
 
 
@@ -35,12 +132,20 @@
           <div class="modal-body">
             <div class="mb-3">
               <label for="employee" class="form-label">Select Employee</label>
-              <select class="form-select" id="employee" name="employee_id" required>
-                <option value="" selected disabled>-- Select Employee --</option>
-                {% for emp in employees %}
-                <option value="{{ emp.id }}">{{ emp.user.get_full_name }} ({{ emp.department.name }})</option>
-                {% endfor %}
-              </select>
+              {% if not isAdmin %}
+                  <!-- Show user's own employee name in disabled select with single option -->
+                  <select class="form-select" id="employee" name="employee_id">
+                      <option value="{{ userModel.id }}" selected>{{ userModel.user.get_full_name }} ({{ userModel.department.name }})</option>
+                  </select>
+              {% else %}
+                  <!-- Admin can select from all -->
+                  <select class="form-select" id="employee" name="employee_id" required>
+                      <option value="" selected disabled>-- Select Employee --</option>
+                      {% for emp in employees %}
+                          <option value="{{ emp.id }}">{{ emp.user.get_full_name }} ({{ emp.department.name }})</option>
+                      {% endfor %}
+                  </select>
+              {% endif %}
             </div>
           </div>
           
@@ -97,6 +202,7 @@
         <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addLunchModal">
             <i class="fa-solid fa-plus me-3"></i>Add Lunch Enrollment
         </button>
+        
         <button class="btn btn-dark ms-3" onclick="window.print()">
           <i class="fa-solid fa-print me-3"></i>Print
       </button>

@@ -12,9 +12,72 @@
         padding-top: 0.3rem;
         padding-bottom: 0.3rem;
     }
+    .container {
+    margin-top: 80px;
+    min-width: 1600px; /* fixed wide layout for desktop */
+}
+
+.sticky-header th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: #f8f9fa;
+}
+
+.table th, .table td {
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+}
+
+/* Responsive styles for small screens */
+@media (max-width: 768px) {
+
+    .container {
+        min-width: auto; /* allow container to shrink */
+        margin: 20px 10px;
+        padding: 0 10px;
+    }
+
+    /* Stack and full-width filter form controls */
+    form.d-flex.flex-wrap {
+        flex-direction: column !important;
+        align-items: stretch;
+    }
+    form.d-flex.flex-wrap > * {
+        width: 100% !important;
+        margin-right: 0 !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* Enable horizontal scroll for table container */
+    .table-container {
+        max-height: none !important;
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+    }
+
+    /* Smaller font size and responsive table width */
+    table.table {
+        font-size: 0.85rem;
+        min-width: 100%;
+    }
+
+    /* Reduce padding on table cells */
+    .table th, .table td {
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
+    }
+
+    /* Make modal dialogs nearly full viewport width on mobile */
+    .modal-dialog.modal-lg {
+        max-width: 95vw;
+        margin: 1.75rem auto;
+    }
+}
+
 </style>
 
-<div class="container" style="margin-top: 80px; min-width: 1600px">
+<div class="container">
     <div class="d-flex mb-3">
          <!-- Filter Form -->
     <form class="d-flex flex-wrap mb-3" method="GET">
