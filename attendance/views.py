@@ -9,6 +9,40 @@ from django.utils import timezone
 from leave.models import *
 from core.models import GlobalConfig
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+# docker exec -it my_django_app python manage.py migrate
+
+
+
+@csrf_exempt
+def api_login(request):
+    if request.method != "POST":
+        return JsonResponse({"success": False, "message": "POST required"})
+
+    data = json.loads(request.body.decode("utf-8"))
+    username = data.get("username")
+    password = data.get("password")
+
+    user = authenticate(username=username, password=password)
+
+    if user is None:
+        return JsonResponse({"success": False, "message": "Invalid credentials"})
+
+    try:
+        employee = user.employee   # because User → Employee (OneToOne)
+    except:
+        return JsonResponse({"success": False, "message": "Employee profile missing"})
+
+    return JsonResponse({
+        "success": True,
+        "employee_id": employee.id,   # <-- RETURN EMPLOYEE ID HERE
+        "username": user.username,
+    })
+
 
 @login_required(login_url='/employees/login')
 def attendanceList(request):

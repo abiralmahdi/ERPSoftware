@@ -19,4 +19,5 @@ urlpatterns = [
     path("sendLocation", views.sendLocation, name="sendLocation"),
     path("seeEmployeeLocation", views.seeEmployeeLocation, name="seeEmployeeLocation"),
     path("getLocation/<str:employeeID>", views.getLocation2, name="getLocation2"),
+    path('api/login/', views.api_login, name="api_login"),
 ]
