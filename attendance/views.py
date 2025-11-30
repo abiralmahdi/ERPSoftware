@@ -14,8 +14,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 
-# docker exec -it my_django_app python manage.py migrate
-
+# docker exec -it mydjango_app python manage.py migrate
 
 
 @csrf_exempt

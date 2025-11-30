@@ -187,6 +187,47 @@ def updateLeaveAdjustment(request, employeeID):
     else:
         return HttpResponse("You are not authorized to view this page")
 
+from django.views.decorators.csrf import csrf_exempt
+@csrf_exempt
+def api_visitApplication(request):
+    print("---------------\nENTEREDDDDDDDD\n-------------------------")
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+
+            employee_id = data.get("employee_id")
+            latitude = data.get("latitude")
+            longitude = data.get("longitude")
+            print(employee_id)
+            print(latitude)
+            print(longitude)
+
+            if not employee_id:
+                return JsonResponse({"success": False, "message": "employee_id missing"}, status=400)
+
+            employee = Employee.objects.get(id=employee_id)
+
+            # Create attendance record
+            VisitApplications.objects.create(
+                employee=employee,
+                startDate=datetime.today(),
+                endDate=datetime.today(),
+                reason="Site/Customer Visit",
+                visitTo=str(latitude) + ", " + str(longitude)
+            )
+
+            # Save last known location (optional)
+            if latitude and longitude:
+                employee.latitude = latitude
+                employee.longitude = longitude
+                employee.save()
+
+            return JsonResponse({"success": True})
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)})
+    
+    return JsonResponse({"status": "unauthorized access"})
+
 
 
 @login_required(login_url='/employees/login')

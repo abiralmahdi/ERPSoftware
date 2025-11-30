@@ -8,6 +8,7 @@ urlpatterns = [
     path('leaveAdjustment', views.leaveAdjustment, name='leaveAdjustment'),
     path('updateLeaveAdjustment/<str:employeeID>', views.updateLeaveAdjustment, name='updateLeaveAdjustment'),
     path('visitApplications', views.visitApplications, name='visitApplications'),
+    path('api_visitApplication', views.api_visitApplication, name='api_visitApplication'),
     path('approveVisitApplication/<str:applicationID>', views.approveVisit, name='approveVisit'),
     path('declineVisitApplication/<str:applicationID>', views.declineVisit, name='declineVisit'),
     path('dashboard', views.leaveDashboard, name='leaveDashboard'),
